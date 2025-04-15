@@ -11,7 +11,7 @@ public:
 
     void runMaze() override;
 
-    static constexpr int MOTOR_SPEED = 100; // range from 0 to 255
+    static constexpr int MOTOR_SPEED = 120; // range from 0 to 255
     static constexpr int OBSTACLE_DISTANCE = 2; // Distance in inches to detect an obstacle
 
 protected:

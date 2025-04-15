@@ -2,7 +2,7 @@
 
 void LineFollowingRunner::runMaze() {
 
-    int movingDirection = 1; // 1 for forward, -1 for backward, 0 for stop
+    float movingDirection = 1.0; // 1 for forward, -1 for backward, 0 for stop
     
     
     // Adjust this value to fine-tune the steering
@@ -14,8 +14,8 @@ void LineFollowingRunner::runMaze() {
 
         //move forward to the next intersection, if blocked by an obstacle, reverse to the last intersection
 
-        motorLeft.run( -MOTOR_SPEED * movingDirection * (1 + steeringAdjustment)); // Adjust left motor speed for steering
-        motorRight.run( MOTOR_SPEED * movingDirection * (1 - steeringAdjustment)); // Adjust right motor speed for steering        
+        motorLeft.run( -MOTOR_SPEED * movingDirection * (1.0 + steeringAdjustment)); // Adjust left motor speed for steering
+        motorRight.run( MOTOR_SPEED * movingDirection * (1.0 - steeringAdjustment)); // Adjust right motor speed for steering        
 
         
         delay(100);  // Move forward for a short duration
@@ -27,14 +27,14 @@ void LineFollowingRunner::runMaze() {
 
             delay(1000);
 
-            movingDirection = -1; // Reverse direction            
+            movingDirection = -1.0; // Reverse direction            
         }
 
         // Read line sensor values
         int sensorState = lineFollower.readSensors();
     
         switch (sensorState) {
-            case S1_IN_S2_IN:  // No line detected - both sensors off
+            case S1_OUT_S2_OUT:  // No line detected - both sensors off
                 
                 //could be turning and looking for the line
                 
@@ -42,15 +42,15 @@ void LineFollowingRunner::runMaze() {
                 
                 break;
                 
-            case S1_IN_S2_OUT:  // Line on right sensor only - go straight with slight right adjustment
+            case S1_OUT_S2_IN:  // Line on right sensor only - go straight with slight right adjustment
                 steeringAdjustment = 0.1; // Adjust right motor speed to tend rightward                
                 break;
                 
-            case S1_OUT_S2_IN:  // Line on left sensor only - go straight with slight left adjustment
+            case S1_IN_S2_OUT:  // Line on left sensor only - go straight with slight left adjustment
                 steeringAdjustment = -0.1; // Adjust right motor speed to tend rightward
                 break;
                 
-            case S1_OUT_S2_OUT:  // Line under both sensors - could be intersection or thick line
+            case S1_IN_S2_IN:  // Line under both sensors - could be intersection or thick line
                 
 
                 //always turn right at intersection
@@ -58,6 +58,7 @@ void LineFollowingRunner::runMaze() {
                 motorRight.run(0); // Adjust right motor speed for turning
 
                 delay(1000); //need to calibrate the turn duration
+                buzzer.tone(1000,200);
 
                 break;
         }
