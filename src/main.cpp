@@ -8,10 +8,9 @@
 MeDCMotor motorLeft(M1);
 MeDCMotor motorRight(M2);
 MeUltrasonicSensor ultrasonicSensor(PORT_3);
-MeLineFollower lineFollower(PORT_4);
-
+MeLineFollower lineFollower(PORT_2);
 MeBuzzer buzzer;
-
+MeRGBLed led(PORT_7, 2); // 2 indicates the number of LEDs
 
 
 //this code was moved from MeMCore.h to avoid compilation errors
@@ -24,21 +23,23 @@ MePort_Sig mePort[17] =
 };
 
 
-
 // Create runner instance
 MazeRunner* runner;
 
-
 void setup() {
     Serial.begin(9600);
+    
+
+
     buzzer.tone(262, 500);
-    delay(3000);
+    delay(1000);
     
     // Initialize the runner
-    //runner = new WallDetectingRunnger(motorLeft, motorRight, ultrasonicSensor, buzzer);
-    runner = new LineFollowingRunner(motorLeft, motorRight, ultrasonicSensor, lineFollower, buzzer);
+    //runner = new WallDetectingRunnger(motorLeft, motorRight, ultrasonicSensor, lineFollower, buzzer, led);
+    runner = new LineFollowingRunner(motorLeft, motorRight, ultrasonicSensor, lineFollower, buzzer, led);
     
 }
+
 
 void loop() {
     runner->runMaze();
