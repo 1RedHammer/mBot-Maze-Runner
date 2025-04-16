@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 // Handles maze tracking and navigation logic
+
 class MazeSolver {
 private:
     // Maze dimensions
@@ -27,7 +28,12 @@ private:
 public:
     // Initialize a new maze with all spaces unexplored
     MazeSolver() : currentX(START_X), currentY(START_Y), deltaX(0), deltaY(1) {
-        // TODO: Set all maze spaces to unexplored (0)
+        for (uint8_t y = 0; y < MAZE_HEIGHT; ++y) {
+            for (uint8_t x = 0; x < MAZE_WIDTH; ++x) {
+                mazeState[y][x] = 0; // Unexplored
+            }
+        }
+        mazeState[START_Y][START_X] = 1; // Mark start as visited
     }
 
     // Record current position as visited or blocked
@@ -36,7 +42,65 @@ public:
     }
 
     void updatePosition() {
-        // TODO: Update currentX/Y based on deltaX/Y
+        // TODO: Update currentX/Y based on deltaX/Y done yay
+        currentX += deltaX;
+        currentY += deltaY;
+    }
+
+    void decideNextMove(){
+
+
+
+
+        // TODO: decide where to go next
+        int nextMovesImpossible[4] = {0, 0, 0, 0}; // N, E, S, W 
+        // Check all 4 directions and update nextMoves based on mazeState
+        if(currentX == 0){
+            nextMovesImpossible[3] = 1;
+        }
+        if(currentX == MAZE_WIDTH-1){
+            nextMovesImpossible[1] = 1;
+        }
+        if(currentY == 0){
+            nextMovesImpossible[2] = 1;
+        }
+        if(currentY == MAZE_HEIGHT - 1){
+            nextMovesImpossible[0] = 1;
+        }
+        if(mazeState[currentY][currentX+1] == 2 || mazeState[currentY][currentX+1] == 1){
+            nextMovesImpossible[1] = 1;
+        }
+        if(mazeState[currentY][currentX-1] == 2 || mazeState[currentY][currentX-1] == 1){
+            nextMovesImpossible[3] = 1;
+        }
+        if(mazeState[currentY+1][currentX] == 2 || mazeState[currentY+1][currentX] == 1){
+            nextMovesImpossible[0] = 1;
+        }
+        if(mazeState[currentY-1][currentX] == 2 || mazeState[currentY-1][currentX] == 1){
+            nextMovesImpossible[2] = 1;
+        }
+        
+        
+
+        switch (randomNumber) {
+            case 0: // North
+                deltaX = 0;
+                deltaY = 1;
+                break;
+            case 1: // East
+                deltaX = 1;
+                deltaY = 0;
+                break;
+            case 2: // South
+                deltaX = 0;
+                deltaY = -1;
+                break;
+            case 3: // West
+                deltaX = -1;
+                deltaY = 0;
+                break;
+        }
+
     }
 
 

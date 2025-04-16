@@ -35,8 +35,15 @@ void LineFollowingRunner::runMaze() {
                 
                 //reached an intersection
                 
-                // TODO: Use mazeSolver to update the status of the maze and decide the next move
                 
+                // TODO: Use mazeSolver to update the status of the maze and decide the next move
+
+                mazeSolver.markCurrentPosition();
+                mazeSolver.updatePosition();
+
+                
+                
+
                 
 
                 motorRight.run(BASE_MOTOR_SPEED);
