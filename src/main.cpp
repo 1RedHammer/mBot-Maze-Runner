@@ -13,13 +13,13 @@ MeBuzzer buzzer;
 MeRGBLed led(PORT_7, 2); // 2 indicates the number of LEDs
 
 
-//this code was moved from MeMCore.h to avoid compilation errors
+// this code was moved from MeMCore.h to avoid compilation errors
 MePort_Sig mePort[17] =
 {
-  { NC, NC }, { 11, 12 }, {  9, 10 }, { A2, A3 }, { A0, A1 },
-  { NC, NC }, {  8, A6 }, { A7, 13 }, {  8, A6 }, {  6,  7 },
-  {  5,  4 }, { NC, NC }, { NC, NC }, { NC, NC }, { NC, NC },
-  { NC, NC },{ NC, NC },
+    { NC, NC }, { 11, 12 }, {  9, 10 }, { A2, A3 }, { A0, A1 },
+    { NC, NC }, {  8, A6 }, { A7, 13 }, {  8, A6 }, {  6,  7 },
+    {  5,  4 }, { NC, NC }, { NC, NC }, { NC, NC }, { NC, NC },
+    { NC, NC },{ NC, NC },
 };
 
 
@@ -27,25 +27,23 @@ MePort_Sig mePort[17] =
 MazeRunner* runner;
 
 void setup() {
+    // Start communication with the computer (for debugging)
     Serial.begin(9600);
-    
-
-
+        
     buzzer.tone(262, 500);
     delay(1000);
     
-    // Initialize the runner
-    //runner = new WallDetectingRunnger(motorLeft, motorRight, ultrasonicSensor, lineFollower, buzzer, led);
+    // Initialize the runner        
     runner = new LineFollowingRunner(motorLeft, motorRight, ultrasonicSensor, lineFollower, buzzer, led);
-    
+
 }
 
 
 void loop() {
-    runner->runMaze();
+        runner->runMaze();
     
     // Stop forever after completing the maze
-    while (true) {
+        while (true) {
         delay(1000);
     }
 }
