@@ -25,18 +25,6 @@ protected:
     void stop() {
         motorLeft.run(0);
         motorRight.run(0);
-    }  
-
-    void setLed(int r, int g, int b) {
-        led.setColor(0, r, g, b); // Set left LED to the specified color
-        led.setColor(1, r, g, b); // Set right LED to the specified color
-        led.show();
-    }
-
-    void setLed(int index, int r, int g, int b) {
-        led.setColor(index, r, g, b);
-        led.show();
-    }
-    
+    }    
 };
 #endif

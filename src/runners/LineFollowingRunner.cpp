@@ -1,64 +1,52 @@
 #include "../../include/LineFollowingRunner.h"
 
+static constexpr float BASE_MOTOR_SPEED = 70;     // range from 0 to 255
+static constexpr float MIN_OBSTACLE_INCHES = 2;   // Distance in inches to detect an obstacle
+static constexpr float MAX_TURN_RATIO = 1.0f;      // Max turning adjustment (1.0 = inner wheel stops)
+
+static constexpr uint8_t MAZE_WIDTH = 3; // Maze dimensions
+static constexpr uint8_t MAZE_HEIGHT = 3; // Maze dimensions
+static constexpr uint8_t TARGET_X = 2, TARGET_Y = 2;
+static constexpr uint8_t START_X = 0, START_Y = 0;
+
 void LineFollowingRunner::runMaze() {
-
-    float movingDirection = 1.0; // 1 for forward, -1 for backward, 0 for stop
-    float motorSpeedAdjustment = 0.2; // Adjust this value to fine-tune the speed
+    // Movement control
+    int8_t directionMultiplier = 1;  // 1=forward, -1=backward, 0=stop
+    float turnAdjustment = 0.0;       // +right, -left
     
-    // Adjust this value to fine-tune the steering
-    // 0.0 means no adjustment, positive values mean right increase, negative values mean left increase
-    float steeringAdjustment = 0.0; 
+    // Maze navigation
+    uint8_t x = START_X, y = START_Y;
+    int8_t deltaX = 0, deltaY = 1;
     
-
-    //define the starting position and direction
-    int x = 0, y = 0; // starting position;
-    const int finalX = 2, finalY = 2; // final position
-    int dx = 0, dy = 1; // direction of movement 
-
-    //init a m x n array (0-unmarked, 1-visited, 2-blocked) to store the maze information
-    int m = 3, n = 3; // dimensions of the maze    
-    int maze[m][n] = {0};    
-    maze[x][y] = 1; // mark the starting position as visited
-    maze[finalX][finalY] = 1; // mark the final position as visited
-
-
+    // Maze state tracking (0=unexplored, 1=visited, 2=blocked)
+    uint8_t mazeState[MAZE_HEIGHT][MAZE_WIDTH] = {0};
+    mazeState[x][y] = 1;                        // Mark start as visited
+    mazeState[TARGET_X][TARGET_Y] = 1;          // Mark target as visited
 
     while (true) {
-
-        //move forward to the next intersection, if blocked by an obstacle, reverse to the last intersection
-        //left motor is wired reversed, so we need to reverse the speed to go forward
-
-        //motorRight.run( MOTOR_SPEED * movingDirection * (1.0 + steeringAdjustment));
-        //motorLeft.run( -MOTOR_SPEED * movingDirection * (1.0 - steeringAdjustment));
-
-        if (steeringAdjustment>0){
-            motorLeft.run( -MOTOR_SPEED * movingDirection);
-            motorRight.run(0);
-        }
-        else if(steeringAdjustment<0){
-            motorRight.run( MOTOR_SPEED * movingDirection);
-            motorLeft.run(0);            
-        }
-        else{
-            motorLeft.run( -MOTOR_SPEED * movingDirection);
-            motorRight.run( MOTOR_SPEED * movingDirection);
+        // Motor speed calculations
+        float rightWheelRatio = 1.0, leftWheelRatio = 1.0;
+        if (turnAdjustment > 0) {
+            rightWheelRatio = 1.0 - turnAdjustment;
+        } else if (turnAdjustment < 0) {
+            leftWheelRatio = 1.0 + turnAdjustment;
         }
         
+        motorRight.run(BASE_MOTOR_SPEED * directionMultiplier * rightWheelRatio);
+        motorLeft.run(-BASE_MOTOR_SPEED * directionMultiplier * leftWheelRatio);
+
         delay(10);  // Move forward for a short duration
 
         // Check for obstacles
-        if (ultrasonicSensor.distanceInch() < OBSTACLE_DISTANCE ) {
+        if (ultrasonicSensor.distanceInch() < MIN_OBSTACLE_INCHES  && directionMultiplier > 0) {
             
             //obstacle detected, mark the target position as blocked
-            x+= dx;
-            y+= dy;                
-            maze[x][y] = 2;
+            x += deltaX;
+            y += deltaY;
+            mazeState[x][y] = 2;
 
             //reverse
-
-            delay(1000);
-
-            movingDirection = -1.0; // Reverse direction
+            directionMultiplier = -1.0; // Reverse direction
         }
 
         // Read line sensor values
@@ -70,9 +58,9 @@ void LineFollowingRunner::runMaze() {
                 //reached an intersection
                 
                 //update the maze array to mark the intersection as visited
-                x+= dx;
-                y+= dy;                
-                maze[x][y] = 1;
+                x += deltaX;
+                y += deltaY;                
+                mazeState[x][y] = 1;
 
 
                 //if all intersections in the matrix are marked. Find way home
@@ -88,37 +76,37 @@ void LineFollowingRunner::runMaze() {
                 //else, deadend, reverse to the last intersection
 
 
-                //move to the center of the intercection
-                motorRight.run(MOTOR_SPEED);
-                motorLeft.run(-MOTOR_SPEED);
-                delay(500);
-                stop();
-                delay(1000);
-                                
+                //move to the center of the intersection
 
-                //make a big turn first to land the sensor on open white space
+                motorRight.run(BASE_MOTOR_SPEED);
+                motorLeft.run(-BASE_MOTOR_SPEED);
+                delay(100);                
+
+
+                //make a big turn first to land the sensor on open white space                
                 motorRight.run(0);
-                motorLeft.run(-MOTOR_SPEED);
-                delay(1200);
+                motorLeft.run(-BASE_MOTOR_SPEED/2.0);
+                delay(800);
 
                 //look for the first road on the right
                 while (lineFollower.readSensors() != S1_IN_S2_IN) {
                     motorRight.run(0);
-                    motorLeft.run(-MOTOR_SPEED);
+                    motorLeft.run(-BASE_MOTOR_SPEED);
                     delay(50);
-                }             
+                }
+
                 break;
                 
-            case S1_OUT_S2_IN:  // Black on right sensor only - go straight with slight right turn
-                steeringAdjustment = motorSpeedAdjustment;                 
+            case S1_OUT_S2_IN:  // Black on right sensor only - right turn
+                turnAdjustment = MAX_TURN_RATIO;                 
                 break;
                 
-            case S1_IN_S2_OUT:  // Black on left sensor only - go straight with slight left turn
-                steeringAdjustment = -motorSpeedAdjustment;                                                 
+            case S1_IN_S2_OUT:  // Black on left sensor only - left turn
+                turnAdjustment = -MAX_TURN_RATIO;                                                 
                 break;
                 
             case S1_IN_S2_IN:  // Black under both sensors
-                steeringAdjustment = 0 ;
+                turnAdjustment = 0 ;
                 break;
         }
         
