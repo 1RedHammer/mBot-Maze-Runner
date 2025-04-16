@@ -1,51 +1,76 @@
 #include "../../include/LineFollowingRunner.h"
 
-// Robot movement configuration
-static constexpr float BASE_MOTOR_SPEED = 70;     // Base motor speed (0-255)
-static constexpr float MIN_OBSTACLE_INCHES = 2;   // Minimum distance to obstacles
-static constexpr float TURN_SPEED = 50;           // Speed for intersection turns
+static constexpr float BASE_MOTOR_SPEED = 70;     // range from 0 to 255
+static constexpr float MIN_OBSTACLE_INCHES = 2;   // Distance in inches to detect an obstacle
+static constexpr float MAX_TURN_RATIO = 1.0f;      // Max turning adjustment (1.0 = inner wheel stops)
+
 
 void LineFollowingRunner::runMaze() {
-    // Movement direction (1=forward, -1=backward, 0=stop)
-    int8_t direction = 1;  
+    // Movement control
+    int8_t directionMultiplier = 1;  // 1=forward, -1=backward, 0=stop
+    float turnAdjustment = 0.0;       // +right, -left
+    
     
     while (true) {
-        // Basic forward movement
-        // TODO: Set motor speeds for forward motion
+        // Motor speed calculations
+        float rightWheelRatio = 1.0, leftWheelRatio = 1.0;
+        if (turnAdjustment > 0) {
+            rightWheelRatio = 1.0 - turnAdjustment;
+        } else if (turnAdjustment < 0) {
+            leftWheelRatio = 1.0 + turnAdjustment;
+        }
         
-        delay(10);  // Prevent sensor read overflow
+        motorRight.run(BASE_MOTOR_SPEED * directionMultiplier * rightWheelRatio);
+        motorLeft.run(-BASE_MOTOR_SPEED * directionMultiplier * leftWheelRatio);
 
-        // Wall detection and avoidance
-        // TODO: Check ultrasonic sensor and handle obstacles
-        // - Check distance with ultrasonicSensor.distanceInch()
-        // - Update maze state if blocked
-        // - Reverse direction if needed
+        delay(10);  // Move forward for a short duration
 
-        // Line following logic
+        // Check for obstacles
+        
+        // Read line sensor values
         int sensorState = lineFollower.readSensors();
     
-        // Handle different line sensor states
         switch (sensorState) {
-            case S1_OUT_S2_OUT:  // At intersection (no line detected)
-                // TODO: Handle intersection navigation
-                // - Stop and update maze position
-                // - Determine next direction
-                // - Execute turn if needed
+            case S1_OUT_S2_OUT:  // No Black detected - both sensors off
+                
+                //reached an intersection
+                
+                // TODO: Use mazeSolver to update the status of the maze and decide the next move
+                
+                
+
+                motorRight.run(BASE_MOTOR_SPEED);
+                motorLeft.run(-BASE_MOTOR_SPEED);
+                delay(100);                
+
+
+                //make a big turn first to land the sensor on open white space                
+                motorRight.run(0);
+                motorLeft.run(-BASE_MOTOR_SPEED/2.0);
+                delay(800);
+
+                //look for the first road on the right
+                while (lineFollower.readSensors() != S1_IN_S2_IN) {
+                    motorRight.run(0);
+                    motorLeft.run(-BASE_MOTOR_SPEED);
+                    delay(50);
+                }
+
                 break;
                 
-            case S1_OUT_S2_IN:   // Line detected on right
-                // TODO: Adjust course right
+            case S1_OUT_S2_IN:  // Black on right sensor only - right turn
+                turnAdjustment = MAX_TURN_RATIO;                 
                 break;
                 
-            case S1_IN_S2_OUT:   // Line detected on left
-                // TODO: Adjust course left
+            case S1_IN_S2_OUT:  // Black on left sensor only - left turn
+                turnAdjustment = -MAX_TURN_RATIO;                                                 
                 break;
                 
-            case S1_IN_S2_IN:    // Centered on line
-                // TODO: Maintain straight course
+            case S1_IN_S2_IN:  // Black under both sensors
+                turnAdjustment = 0 ;
                 break;
         }
         
-        delay(10);
+        delay(10);  // Small delay to prevent sensor reading too frequently
     }
 }
