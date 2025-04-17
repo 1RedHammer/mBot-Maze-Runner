@@ -102,32 +102,77 @@ public:
             nextMovesImpossible[2] = 1;
         }
         
-        return MOVE_FORWARD;
-
-        /*
-        
-        int randomNumber = 0 ; //currently always go north
-
-        switch (randomNumber) {
-            case 0: // North
-                deltaX = 0;
-                deltaY = 1;
-                break;
-            case 1: // East
-                deltaX = 1;
-                deltaY = 0;
-                break;
-            case 2: // South
-                deltaX = 0;
-                deltaY = -1;
-                break;
-            case 3: // West
-                deltaX = -1;
-                deltaY = 0;
-                break;
+        int beforeX = deltaX;
+        int beforeY = deltaY;
+        deltaX = beforeY;
+        deltaY = -beforeX;
+        //turn right
+        if(deltaX == 0 && deltaY == 1){
+            if(nextMovesImpossible[0] == 0){
+                return TURN_RIGHT;
+            }
         }
-                */
-
+        if(deltaX == 1 && deltaY == 0){
+            if(nextMovesImpossible[1] == 0){
+                return TURN_RIGHT;
+            }
+        }
+        if(deltaX == 0 && deltaY == -1){
+            if(nextMovesImpossible[2] == 0){
+                return TURN_RIGHT;
+            }
+        }
+        if(deltaX == -1 && deltaY == 0){
+            if(nextMovesImpossible[3] == 0){
+                return TURN_RIGHT;
+            }
+        }
+        //if can't turn right, go forward
+        if(beforeX == 0 && beforeY == 1){
+            if(nextMovesImpossible[0] == 0){
+                return MOVE_FORWARD;
+            }
+        }
+        if(beforeX == 1 && beforeY == 0){
+            if(nextMovesImpossible[1] == 0){
+                return MOVE_FORWARD;
+            }
+        }
+        if(beforeX == 0 && beforeY == -1){
+            if(nextMovesImpossible[2] == 0){
+                return MOVE_FORWARD;
+            }
+        }
+        if(beforeX == -1 && beforeY == 0){
+            if(nextMovesImpossible[3] == 0){
+                return MOVE_FORWARD;
+            }
+        }
+        //if can't go forward, turn left
+        deltaX = -beforeY;
+        deltaY = beforeX;
+        if(deltaX == 0 && deltaY == 1){
+            if(nextMovesImpossible[0] == 0){
+                return TURN_LEFT;
+            }
+        }
+        if(deltaX == 1 && deltaY == 0){
+            if(nextMovesImpossible[1] == 0){
+                return TURN_LEFT;
+            }
+        }
+        if(deltaX == 0 && deltaY == -1){
+            if(nextMovesImpossible[2] == 0){
+                return TURN_LEFT;
+            }
+        }
+        if(deltaX == -1 && deltaY == 0){
+            if(nextMovesImpossible[3] == 0){
+                return TURN_LEFT;
+            }
+        }
+        //if all else fails, turn around and go back
+        return U_TURN;
     }
 
     
