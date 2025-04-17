@@ -64,7 +64,7 @@ public:
 
     // Record current position as visited or blocked
     void markCurrentPosition(State state) {        
-        mazeState[currentY][currentX] = state; // Mark current position
+        mazeState[currentX][currentY] = state; // Mark current position
     }
 
     void updatePosition() {        
@@ -130,21 +130,29 @@ public:
         //if can't turn right, go forward
         if(beforeX == 0 && beforeY == 1){
             if(nextMovesImpossible[0] == 0){
+                deltaX = beforeX;
+                deltaY = beforeY;
                 return MOVE_FORWARD;
             }
         }
         if(beforeX == 1 && beforeY == 0){
             if(nextMovesImpossible[1] == 0){
+                deltaX = beforeX;
+                deltaY = beforeY;
                 return MOVE_FORWARD;
             }
         }
         if(beforeX == 0 && beforeY == -1){
             if(nextMovesImpossible[2] == 0){
+                deltaX = beforeX;
+                deltaY = beforeY;
                 return MOVE_FORWARD;
             }
         }
         if(beforeX == -1 && beforeY == 0){
             if(nextMovesImpossible[3] == 0){
+                deltaX = beforeX;
+                deltaY = beforeY;
                 return MOVE_FORWARD;
             }
         }
