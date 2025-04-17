@@ -3,7 +3,11 @@
 #include <stdio.h>
 #include <string>
 
-/* had to install g++, and native test mode */
+/* had to install g++ from https://www.msys2.org/, 
+    and native test mode 
+	then configure env variables to add the path of gcc (C:\msys64\mingw64\bin)
+    in PIO console, run "pio test -e native -v" to run the test locallly 
+*/
 
 MazeSolver *solver;
 
