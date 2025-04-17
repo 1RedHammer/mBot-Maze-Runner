@@ -4,6 +4,34 @@ static constexpr float BASE_MOTOR_SPEED = 70;     // range from 0 to 255
 static constexpr float MIN_OBSTACLE_INCHES = 2;   // Distance in inches to detect an obstacle
 static constexpr float MAX_TURN_RATIO = 1.0f;      // Max turning adjustment (1.0 = inner wheel stops)
 
+//TODO: implement the movement functions in the base class
+void LineFollowingRunner::turnLeft() {}
+
+void LineFollowingRunner::turnRight() {    
+
+    motorRight.run(BASE_MOTOR_SPEED);
+    motorLeft.run(-BASE_MOTOR_SPEED);
+    delay(100);                
+
+
+    //make a big turn first to land the sensor on open white space                
+    motorRight.run(0);
+    motorLeft.run(-BASE_MOTOR_SPEED/2.0);
+    delay(800);
+
+    //look for the first road on the right
+    while (lineFollower.readSensors() != S1_IN_S2_IN) {
+        motorRight.run(0);
+        motorLeft.run(-BASE_MOTOR_SPEED);
+        delay(50);
+    }
+
+}
+void LineFollowingRunner::moveForward() {}
+void LineFollowingRunner::moveBackward() {}
+void LineFollowingRunner::uTurn() {}
+
+
 
 void LineFollowingRunner::runMaze() {
     // Movement control
@@ -39,30 +67,31 @@ void LineFollowingRunner::runMaze() {
                 // TODO: Use mazeSolver to update the status of the maze and decide the next move
 
                 mazeSolver.markCurrentPosition();
-                mazeSolver.updatePosition();
+                mazeSolver.updatePosition();                
+                mazeSolver.decideNextMove();
 
-                
-                
-
-                
-
-                motorRight.run(BASE_MOTOR_SPEED);
-                motorLeft.run(-BASE_MOTOR_SPEED);
-                delay(100);                
-
-
-                //make a big turn first to land the sensor on open white space                
-                motorRight.run(0);
-                motorLeft.run(-BASE_MOTOR_SPEED/2.0);
-                delay(800);
-
-                //look for the first road on the right
-                while (lineFollower.readSensors() != S1_IN_S2_IN) {
-                    motorRight.run(0);
-                    motorLeft.run(-BASE_MOTOR_SPEED);
-                    delay(50);
+                switch (mazeSolver.decideNextMove()) {
+                    case MazeSolver::MOVE_FORWARD:
+                        directionMultiplier = 1;
+                        break;
+                    case MazeSolver::TURN_LEFT:
+                        turnLeft();
+                        break;
+                    case MazeSolver::TURN_RIGHT:
+                        turnRight();
+                        break;
+                    case MazeSolver::U_TURN:
+                        uTurn();
+                        break;
+                    case MazeSolver::MOVE_BACKWARD:
+                        directionMultiplier = -1;
+                        break;
+                    default:
+                        directionMultiplier = 0; // Stop
                 }
 
+
+                
                 break;
                 
             case S1_OUT_S2_IN:  // Black on right sensor only - right turn

@@ -3,10 +3,10 @@
 
 #include "../include/MazeRunner.h"
 
-class WallDetectingRunnger : public MazeRunner
+class WallDetectingRunner : public MazeRunner
 {
 public:
-    WallDetectingRunnger(MeDCMotor &left, MeDCMotor &right, MeUltrasonicSensor &sensor, 
+    WallDetectingRunner(MeDCMotor &left, MeDCMotor &right, MeUltrasonicSensor &sensor, 
                         MeLineFollower &lineFollower, MeBuzzer &buz, MeRGBLed &rgbled)
         : MazeRunner(left, right, sensor, lineFollower, buz, rgbled) {}
 

@@ -1,6 +1,6 @@
 #include "../../include/WallDetectingRunner.h"
 
-void WallDetectingRunnger::turn(int angle)
+void WallDetectingRunner::turn(int angle)
 {
     if (angle > 0)
     { // Turn right
@@ -18,7 +18,7 @@ void WallDetectingRunnger::turn(int angle)
     motorRight.run(0);
 }
 
-void WallDetectingRunnger::moveForward(float feet)
+void WallDetectingRunner::moveForward(float feet)
 {
     float initialDistance = ultrasonicSensor.distanceInch();
     float targetDistance = initialDistance - (12.0 * feet);
@@ -34,13 +34,13 @@ void WallDetectingRunnger::moveForward(float feet)
     motorRight.run(0);
 }
 
-void WallDetectingRunnger::stop()
+void WallDetectingRunner::stop()
 {
     motorLeft.run(0);
     motorRight.run(0);
 }
 
-void WallDetectingRunnger::checkCenter()
+void WallDetectingRunner::checkCenter()
 {
     float bodylength = 6.5;
     turn(90);
@@ -65,7 +65,7 @@ void WallDetectingRunnger::checkCenter()
     stop();
 }
 
-void WallDetectingRunnger::runMaze()
+void WallDetectingRunner::runMaze()
 {
     checkCenter();
     moveForward(1.0);
