@@ -1,6 +1,6 @@
 #include "../../include/LineFollowingRunner.h"
 
-static constexpr float BASE_MOTOR_SPEED = 70;     // range from 0 to 255
+static constexpr float BASE_MOTOR_SPEED = 80;     // range from 0 to 255
 static constexpr float MIN_OBSTACLE_INCHES = 2;   // Distance in inches to detect an obstacle
 static constexpr float MAX_TURN_RATIO = 1.0f;      // Max turning adjustment (1.0 = inner wheel stops)
 
@@ -66,11 +66,11 @@ void LineFollowingRunner::runMaze() {
                 
                 // TODO: Use mazeSolver to update the status of the maze and decide the next move
 
-                mazeSolver.markCurrentPosition();
+                mazeSolver.markCurrentPosition(MazeSolver::State::STATE_VISITED); // Mark current position as visited);
                 mazeSolver.updatePosition();                
-                mazeSolver.decideNextMove();
+                MazeSolver::Action action =  mazeSolver.decideNextMove();
 
-                switch (mazeSolver.decideNextMove()) {
+                switch (action) {
                     case MazeSolver::MOVE_FORWARD:
                         directionMultiplier = 1;
                         break;
@@ -88,10 +88,7 @@ void LineFollowingRunner::runMaze() {
                         break;
                     default:
                         directionMultiplier = 0; // Stop
-                }
-
-
-                
+                }                
                 break;
                 
             case S1_OUT_S2_IN:  // Black on right sensor only - right turn
