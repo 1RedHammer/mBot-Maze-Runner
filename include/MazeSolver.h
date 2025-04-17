@@ -80,7 +80,7 @@ public:
         if(currentX == 0){
             nextMovesImpossible[3] = 1;
         }
-        if(currentX == GlobalConstants::MAZE_WIDTH-1){
+        if(currentX == GlobalConstants::MAZE_WIDTH - 1){
             nextMovesImpossible[1] = 1;
         }
         if(currentY == 0){
@@ -89,18 +89,20 @@ public:
         if(currentY == GlobalConstants::MAZE_HEIGHT - 1){
             nextMovesImpossible[0] = 1;
         }
-        if(mazeState[currentY][currentX+1] == 2 || mazeState[currentY][currentX+1] == 1){
-            nextMovesImpossible[1] = 1;
-        }
-        if(mazeState[currentY][currentX-1] == 2 || mazeState[currentY][currentX-1] == 1){
-            nextMovesImpossible[3] = 1;
-        }
-        if(mazeState[currentY+1][currentX] == 2 || mazeState[currentY+1][currentX] == 1){
+        if(mazeState[currentX][currentY+1] == 2 || mazeState[currentX][currentY+1] == 1){
             nextMovesImpossible[0] = 1;
         }
-        if(mazeState[currentY-1][currentX] == 2 || mazeState[currentY-1][currentX] == 1){
+        if(mazeState[currentX][currentY-1] == 2 || mazeState[currentX][currentY-1] == 1){
             nextMovesImpossible[2] = 1;
         }
+        if(mazeState[currentX+1][currentY] == 2 || mazeState[currentX+1][currentY] == 1){
+            nextMovesImpossible[1] = 1;
+        }
+        if(mazeState[currentX-1][currentY] == 2 || mazeState[currentX-1][currentY] == 1){
+            nextMovesImpossible[3] = 1;
+        }
+      
+        
         
         int beforeX = deltaX;
         int beforeY = deltaY;
@@ -221,7 +223,7 @@ public:
     void setMode(int8_t newMode) { mode = newMode; }
 
     void setMazeCell(uint8_t x, uint8_t y, uint8_t value) {
-        mazeState[y][x] = value;
+        mazeState[x][y] = value;
     }
     
 };
