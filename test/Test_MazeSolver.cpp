@@ -12,7 +12,7 @@
     5. g++ --version
     
 	then configure env variables to add the path of gcc (C:\msys64\mingw64\bin)
-    
+
     in PIO console, run "pio test -e native -v" to run the test locallly 
 */
 
@@ -193,17 +193,23 @@ void test_explore(void)
 {
     drawMaze(solver); // Draw the maze before exploring
     int limiter = 0; // Limiter to prevent infinite loop
-    
+    MazeSolver::Action action ; // Initial action
+
     do{
         solver->markCurrentPosition(MazeSolver::State::STATE_VISITED); // Mark current position as visited
         solver->updatePosition(); // Update the current position based on delta
         limiter++;
 
         printf("\nSTEP %d", limiter); // Print the step number
+        
+
+        action = solver->decideNextMove(); // Decide the next move
+        printf(" -- Action: %d\n", action); // Print the action
 
         drawMaze(solver); // Draw the maze after exploring
+
     }
-    while (solver->decideNextMove() != MazeSolver::STOP && limiter < 5); // Stop if the target is reached or if the loop limit is reached
+    while (action != MazeSolver::Action::STOP  && limiter < 5); // Stop if the target is reached or if the loop limit is reached
     
 }
 
