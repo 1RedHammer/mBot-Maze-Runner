@@ -3,9 +3,16 @@
 #include <stdio.h>
 #include <string>
 
-/* had to install g++ from https://www.msys2.org/, 
-    and native test mode 
+/* had to install g++ from https://www.msys2.org/
+    1. download
+    2. Open MSYS2 MSYS terminal
+    3. pacman -Syu       # Update system (may ask to restart)
+       pacman -S mingw-w64-x86_64-gcc
+    4. Open MSYS2 MinGW 64-bit terminal.
+    5. g++ --version
+    
 	then configure env variables to add the path of gcc (C:\msys64\mingw64\bin)
+    
     in PIO console, run "pio test -e native -v" to run the test locallly 
 */
 
