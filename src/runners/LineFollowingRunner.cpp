@@ -1,6 +1,6 @@
 #include "../../include/LineFollowingRunner.h"
 
-static constexpr float BASE_MOTOR_SPEED = 80;     // range from 0 to 255
+static constexpr float BASE_MOTOR_SPEED = 70;     // range from 0 to 255
 static constexpr float MIN_OBSTACLE_INCHES = 2;   // Distance in inches to detect an obstacle
 static constexpr float MAX_TURN_RATIO = 1.0f;      // Max turning adjustment (1.0 = inner wheel stops)
 
@@ -9,6 +9,7 @@ void LineFollowingRunner::turnLeft() {}
 
 void LineFollowingRunner::turnRight() {    
 
+    //move into the intersection
     motorRight.run(BASE_MOTOR_SPEED);
     motorLeft.run(-BASE_MOTOR_SPEED);
     delay(100);                
@@ -27,7 +28,12 @@ void LineFollowingRunner::turnRight() {
     }
 
 }
-void LineFollowingRunner::moveForward() {}
+void LineFollowingRunner::moveForward() {
+    motorRight.run(BASE_MOTOR_SPEED);
+    motorLeft.run(-BASE_MOTOR_SPEED);
+    delay(100);                
+}
+
 void LineFollowingRunner::moveBackward() {}
 void LineFollowingRunner::uTurn() {}
 
@@ -72,6 +78,7 @@ void LineFollowingRunner::runMaze() {
 
                 switch (action) {
                     case MazeSolver::MOVE_FORWARD:
+                        moveForward();
                         directionMultiplier = 1;
                         break;
                     case MazeSolver::TURN_LEFT:
