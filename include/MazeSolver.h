@@ -8,12 +8,10 @@
 
 class MazeSolver {
 private:
-    // Maze dimensions    
     
     // Start and target positions in the maze
-    uint8_t START_X = 0, START_Y = 0;
-    uint8_t TARGET_X = 2, TARGET_Y = 2;
-    
+    uint8_t startX = 0, startY = 0;
+    uint8_t targetX = 3, targetY = 3;    
 
     // Maze state tracking:
     // 0 = unexplored
@@ -29,8 +27,7 @@ private:
 
 public:
     // Initialize a new maze with all spaces unexplored
-    MazeSolver() : currentX(START_X), currentY(START_Y), deltaX(0), deltaY(1) {
-
+    MazeSolver() : currentX(startX), currentY(startY), deltaX(0), deltaY(1) {
         
         for (uint8_t y = 0; y < GlobalConstants::MAZE_HEIGHT; ++y) {
             for (uint8_t x = 0; x < GlobalConstants::MAZE_WIDTH; ++x) {
@@ -38,7 +35,7 @@ public:
             }
         }
 
-        mazeState[START_Y][START_X] = 1; // Mark start as visited
+        mazeState[startY][startX] = 1; // Mark start as visited
     }
 
     enum Action {
@@ -72,8 +69,14 @@ public:
         currentY += deltaY;
     }
 
+    Action processIntersection(State state) {
+        markCurrentPosition(state); // Mark current position as visited
+        updatePosition(); // Update the robot's position in the maze
+        return decideNextMove();
+    }
+
     Action decideNextMove(){
-        
+                
         // TODO: decide where to go next
         int nextMovesImpossible[4] = {0, 0, 0, 0}; // N, E, S, W 
         // Check all 4 directions and update nextMoves based on mazeState
@@ -183,17 +186,15 @@ public:
         }
         //if all else fails, turn around and go back
         return U_TURN;
-    }
-
-    
+    }    
 
     //getters
     uint8_t getCurrentX() const { return currentX; }
     uint8_t getCurrentY() const { return currentY; }
     int8_t getDeltaX() const { return deltaX; }
     int8_t getDeltaY() const { return deltaY; }
-    int8_t getTargetX() const { return TARGET_X; }
-    int8_t getTargetY() const { return TARGET_Y; }
+    int8_t getTargetX() const { return targetX; }
+    int8_t getTargetY() const { return targetY; }
     int8_t getMode() const { return mode; }
     uint8_t getMazeCell(uint8_t x, uint8_t y) const {
         return mazeState[y][x];
@@ -211,13 +212,13 @@ public:
     }
 
     void setStart(uint8_t x, uint8_t y) {
-        START_X = x;
-        START_Y = y;
+        startX = x;
+        startY = y;
     }
 
     void setTarget(uint8_t x, uint8_t y) {
-        TARGET_X = x;
-        TARGET_Y = y;
+        targetX = x;
+        targetY = y;
     }
 
     void setMode(int8_t newMode) { mode = newMode; }

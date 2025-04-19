@@ -14,9 +14,15 @@ public:
 
     void runMaze() override;    
 
+    enum TurnDirection {
+        LEFT = -1,
+        RIGHT = 1,
+    };
+
 private:
     MazeSolver mazeSolver;
 
+    void turn(TurnDirection direction);
     void turnLeft();
     void turnRight();
     void moveForward();
