@@ -28,10 +28,10 @@ MazeRunner* runner;
 
 void setup() {
     // Start communication with the computer (for debugging)
-    Serial.begin(9600);
+    //Serial.begin(9600);
         
     buzzer.tone(262, 500);
-    delay(1000);
+    delay(500);
     
     // Initialize the runner        
     runner = new LineFollowingRunner(motorLeft, motorRight, ultrasonicSensor, lineFollower, buzzer, led);

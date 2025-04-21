@@ -20,19 +20,19 @@ MazeSolver *solver;
 
 // a maze picture to be used for testing
 const std::string 
-/*
+
 mazePic[4] = {
     "...$",
     "....",
     "....",    
     "A..."
 };
-*/
+/*
 mazePic[3] = {
     "..$",
     "...",
     "A.."
-};
+};*/
 
 
 struct drawMazeChars
