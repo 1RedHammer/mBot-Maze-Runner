@@ -7,18 +7,25 @@ static constexpr int TURN_SPEED = 80;           // Speed for turning in place
 static constexpr int MIN_TIME_BETWEEN_INTERSECTIONS = 2500;
 
 // Define musical notes
-static constexpr int NOTE_C = 262;
-static constexpr int NOTE_D = 294;
-static constexpr int NOTE_E = 330;
-static constexpr int NOTE_F = 349;
-static constexpr int NOTE_G = 392;
-static constexpr int NOTE_A = 440;
-static constexpr int NOTE_B = 494;
+static constexpr int NOTE_C3 = 130;
+static constexpr int NOTE_D3 = 147;
+static constexpr int NOTE_E3 = 165;
+static constexpr int NOTE_F3 = 175;
+static constexpr int NOTE_G3 = 196;
+static constexpr int NOTE_A3 = 220;
+static constexpr int NOTE_B3 = 247;
+static constexpr int NOTE_C4 = 262;
+static constexpr int NOTE_D4 = 294;
+static constexpr int NOTE_E4 = 330;
+static constexpr int NOTE_F4 = 349;
+static constexpr int NOTE_G4 = 392;
+static constexpr int NOTE_A4 = 440;
+static constexpr int NOTE_B4 = 494;
 
 // Add a static variable to track the current note
 static int currentNoteIndex = 0;
-// Extend the notes array to include the full scale
-static constexpr int notes[] = {NOTE_C, NOTE_D, NOTE_E, NOTE_F, NOTE_G, NOTE_A, NOTE_B};
+// Add higher octaves to the notes array
+static constexpr int notes[] = {NOTE_C3, NOTE_D3, NOTE_E3, NOTE_F3, NOTE_G3, NOTE_A3, NOTE_B3, NOTE_C4, NOTE_D4, NOTE_E4, NOTE_F4, NOTE_G4, NOTE_A4, NOTE_B4};
 
 void LineFollowingRunner::turn(TurnDirection direction)
 {
