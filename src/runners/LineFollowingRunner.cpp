@@ -1,43 +1,30 @@
 #include "../../include/LineFollowingRunner.h"
+#include "../../include/SoundPlayer.h"
 
 static constexpr float MIN_OBSTACLE_INCHES = 2; // Distance in inches to detect an obstacle
 static constexpr int LOW_SPEED = 35;            // Low speed for steering
 static constexpr int HIGH_SPEED = 70;           // High speed for moving forward
 static constexpr int TURN_SPEED = 80;           // Speed for turning in place
 static constexpr int MIN_TIME_BETWEEN_INTERSECTIONS = 2500;
+static constexpr int TIME_TO_CENTER_INTERSECTION = 850; // Time to center the robot in the intersection
+static constexpr float TURN_ANGLE_TO_TIME_FACTOR = 4.0; // Factor to convert turn angle to time in milliseconds
+static constexpr int TIME_TO_ALIGN = 20; // Time to align the robot after a turn
 
-// Define musical notes
-static constexpr int NOTE_C3 = 130;
-static constexpr int NOTE_D3 = 147;
-static constexpr int NOTE_E3 = 165;
-static constexpr int NOTE_F3 = 175;
-static constexpr int NOTE_G3 = 196;
-static constexpr int NOTE_A3 = 220;
-static constexpr int NOTE_B3 = 247;
-static constexpr int NOTE_C4 = 262;
-static constexpr int NOTE_D4 = 294;
-static constexpr int NOTE_E4 = 330;
-static constexpr int NOTE_F4 = 349;
-static constexpr int NOTE_G4 = 392;
-static constexpr int NOTE_A4 = 440;
-static constexpr int NOTE_B4 = 494;
 
 // Add a static variable to track the current note
 static int currentNoteIndex = 0;
-// Add higher octaves to the notes array
-static constexpr int notes[] = {NOTE_C3, NOTE_D3, NOTE_E3, NOTE_F3, NOTE_G3, NOTE_A3, NOTE_B3, NOTE_C4, NOTE_D4, NOTE_E4, NOTE_F4, NOTE_G4, NOTE_A4, NOTE_B4};
 
-void LineFollowingRunner::turn(TurnDirection direction)
+
+void LineFollowingRunner::turn(TurnDirection direction, int angle)
 {
     // turn in-place
     motorRight.run(-TURN_SPEED * direction);
     motorLeft.run(-TURN_SPEED * direction);
-    delay(300); // turn for a while to get close to the line
+    delay( angle * TURN_ANGLE_TO_TIME_FACTOR ); // turn for a while to get close to the line
 
     motorRight.stop();
     motorLeft.stop(); 
     delay(100); // wait for a bit to let the car stop
-
 
     motorRight.run(-TURN_SPEED * direction);
     motorLeft.run(-TURN_SPEED * direction);
@@ -49,18 +36,18 @@ void LineFollowingRunner::turn(TurnDirection direction)
     }
 
     // let it turn just a bit more to get the car straight
-    delay(40);
+    delay(TIME_TO_ALIGN);
 
 
 }
 void LineFollowingRunner::turnLeft()
 {
-    turn(LEFT);
+    turn(LEFT, 90);
 }
 
 void LineFollowingRunner::turnRight()
 {
-    turn(RIGHT);
+    turn(RIGHT, 90);
 }
 void LineFollowingRunner::moveForward()
 {
@@ -75,7 +62,33 @@ void LineFollowingRunner::moveBackward()
 }
 void LineFollowingRunner::uTurn()
 {
+    turn(LEFT, 180);
 }
+
+void LineFollowingRunner::act(MazeSolver::Action action)
+{
+    switch (action)
+    {
+    case MazeSolver::MOVE_FORWARD:
+        moveForward();
+        break;
+    case MazeSolver::TURN_LEFT:
+        turnLeft();
+        break;
+    case MazeSolver::TURN_RIGHT:
+        turnRight();
+        break;
+    case MazeSolver::U_TURN:
+        uTurn();
+        break;
+    case MazeSolver::MOVE_BACKWARD:
+        moveBackward();
+        break;
+    default:
+        break;
+    }
+}
+
 
 void LineFollowingRunner::runMaze()
 {
@@ -85,8 +98,22 @@ void LineFollowingRunner::runMaze()
     moveForward();
 
     while (true)
-    { // TODO - Check for obstacles
+    {         
+        if (ultrasonicSensor.distanceInch() < MIN_OBSTACLE_INCHES)
+        {
+            // Stop the motors
+            motorRight.stop();
+            motorLeft.stop();
+            delay(200); // Wait for a second
+            
+            soundPlayer.playMelody(SoundPlayer::OBSTACLE_ENCOUNTERED);            
 
+            MazeSolver::Action action = mazeSolver.processIntersection(MazeSolver::State::STATE_BLOCKED);  
+            
+            // the only actions that make sense here are U_TURN and MOVE_BACKWARD
+            act(action); // Act based on the action returned by the maze solver
+        }
+        
         // Read line sensor values
         int sensorState = lineFollower.readSensors();
         switch (sensorState)
@@ -115,12 +142,9 @@ void LineFollowingRunner::runMaze()
             // Check if enough time has passed since the last intersection
             if (millis() - lastIntersectionTime < MIN_TIME_BETWEEN_INTERSECTIONS)
             {
-                // not a real intersection
-
-                
+                // not a real intersection                
                 // shouldn't we back up a bit?
                 stop();
-
                 break;
             }
 
@@ -128,40 +152,22 @@ void LineFollowingRunner::runMaze()
             lastIntersectionTime = millis();
 
             // Move forward to align wheels with the center of intersection
-            delay(850); //this is very important
+            delay(TIME_TO_CENTER_INTERSECTION); //this is very important
             motorRight.stop();
             motorLeft.stop();
             delay(100);
 
             // Play the current note and update the index
-            buzzer.tone(notes[currentNoteIndex], 100); // Play the current note
-            currentNoteIndex = (currentNoteIndex + 1) % (sizeof(notes) / sizeof(notes[0])); // Move to the next note
+            soundPlayer.playNoteAtIndex(currentNoteIndex);
+            currentNoteIndex = (currentNoteIndex + 1) % SoundPlayer::getNotesCount();
             
             delay(50);
 
             // Use mazeSolver to update the status of the maze and decide the next move
             MazeSolver::Action action = mazeSolver.processIntersection(MazeSolver::State::STATE_VISITED);
 
-            switch (action)
-            {
-            case MazeSolver::MOVE_FORWARD:
-                moveForward();
-                break;
-            case MazeSolver::TURN_LEFT:
-                turnLeft();                
-                break;
-            case MazeSolver::TURN_RIGHT:
-                turnRight();                
-                break;
-            case MazeSolver::U_TURN:
-                uTurn();
-                moveForward();
-                break;
-            case MazeSolver::MOVE_BACKWARD:
-                break;
-            default:
-                break;
-            }
+            act(action); // Act based on the action returned by the maze solver
+            
             break;
         }        
         delay(20); // Allow time for the sensor reading to stabilize

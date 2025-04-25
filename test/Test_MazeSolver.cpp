@@ -23,8 +23,8 @@ const std::string
 
 mazePic[4] = {
     "...$",
-    "....",
-    "....",    
+    "...?",
+    ".?..",    
     "A..."
 };
 /*
@@ -39,7 +39,8 @@ struct drawMazeChars
 {
     // note - better stick with common characters otherwise printf will work weirdly
 
-    static const char CHAR_BLOCKED = 'X';    // Blocked cell
+    static const char CHAR_BLOCKED = 'X';    // Blocked cell known to the solver
+    static const char CHAR_BLOCKED_Unkown = '?';  // Blocked cell unknown to the solver
     static const char CHAR_VISITED = 'o';    // Visited cell
     static const char CHAR_UNEXPLORED = '.'; // Unexplored cell
     static const char CHAR_RUNNER = 'R';     // Runner symbol
@@ -109,7 +110,11 @@ void initMaze(MazeSolver *sv)
             {
                 sv->setMazeCell(x, indexY, MazeSolver::State::STATE_VISITED);
                 sv->setDelta(-1, 0); // Set delta to west
-            }             
+            }
+            else {
+                // Default case for unexplored cells (this include the '?')
+                sv->setMazeCell(x, indexY, MazeSolver::State::STATE_UNEXPLORED);
+            }
         }
     }
         
@@ -160,12 +165,24 @@ void test_explore(void)
 {
     drawMaze(solver); // Draw the maze before exploring
     int limiter = 0; 
-    int maxSteps = 16; // Maximum steps to explore the maze
+    int maxSteps = 20; // Maximum steps to explore the maze
     MazeSolver::Action action ; // Initial action
 
     do{
+        //get the next cell to explore
+        uint8_t nextX = solver->getCurrentX() + solver->getDeltaX();
+        uint8_t nextY = solver->getCurrentY() + solver->getDeltaY(); // Get the next cell coordinates
+
         
-        action = solver->processIntersection(MazeSolver::State::STATE_VISITED); // Process the intersection
+        //use mazePic to check if the position is blocked, be sure to transform the coordinates to the mazePic indexes                
+        if (mazePic[toArrayIndexY(nextY)][nextX] == drawMazeChars::CHAR_BLOCKED_Unkown
+        || mazePic[toArrayIndexY(nextY)][nextX] == drawMazeChars::CHAR_BLOCKED) {        
+            printf("Target is blocked\n");
+            action = solver->processIntersection(MazeSolver::State::STATE_BLOCKED); // Blocked cell
+        }
+        else {
+            action = solver->processIntersection(MazeSolver::State::STATE_VISITED); // Process the intersection
+        }
 
         limiter++;
         printf("\nSTEP %d", limiter);

@@ -70,8 +70,18 @@ public:
     }
 
     Action processIntersection(State state) {
-        markCurrentPosition(state); // Mark current position as visited
         updatePosition(); // Update the robot's position in the maze
+        markCurrentPosition(state); // Mark current position as visited
+
+        if (state == STATE_BLOCKED) {
+
+            //update deltaX and deltaY to the opposite direction
+            deltaX = -deltaX;
+            deltaY = -deltaY;            
+
+            return U_TURN; // If blocked, turn around
+        }
+
         return decideNextMove();
     }
 
@@ -184,9 +194,13 @@ public:
                 return TURN_LEFT;
             }
         }
-        //if all else fails, turn around and go back
+        
+        //no way to go, turn around
+        deltaX = -beforeX;
+        deltaY = -beforeY;
         return U_TURN;
-    }    
+    }
+
 
     //getters
     uint8_t getCurrentX() const { return currentX; }
