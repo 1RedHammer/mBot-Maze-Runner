@@ -196,8 +196,49 @@ public:
         }
         
         //no way to go, turn around
+        bool stillUnexplored = false;
+        int unexploredX = -1;
+        int unexploredY = -1;
+        for (int y = 0; y < GlobalConstants::MAZE_HEIGHT; y++){
+            for (int x = 0; x < GlobalConstants::MAZE_WIDTH; x++){
+                if (mazeState[x][y] == 0){
+                    stillUnexplored = true;
+                    unexploredX = x;
+                    unexploredY = y;
+                    break;
+                }
+            }
+        }
         deltaX = -beforeX;
         deltaY = -beforeY;
+        if(mazeState[currentX][currentY] == 1 && stillUnexplored){
+            //go to the unexplored cell
+            if(unexploredX > currentX){
+                deltaX = 1;
+            }
+            if(unexploredX < currentX){
+                deltaX = -1;
+            }
+            if(unexploredY > currentY){
+                deltaY = 1;
+            }
+            if(unexploredY < currentY){
+                deltaY = -1;
+            }
+            if(deltaX == beforeX && deltaY == beforeY){
+                return MOVE_FORWARD;
+            }
+            if(deltaX == beforeY && deltaY == -beforeX){
+                return TURN_RIGHT;
+            }
+            if(deltaX == -beforeY && deltaY == beforeX){
+                return TURN_LEFT;
+            }
+            if(deltaX == -beforeX && deltaY == -beforeY){
+                return U_TURN;
+            }
+            return MOVE_BACKWARD;
+        }
         return U_TURN;
     }
 
