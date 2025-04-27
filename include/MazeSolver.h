@@ -209,24 +209,30 @@ public:
                 }
             }
         }
-        deltaX = -beforeX;
-        deltaY = -beforeY;
-        if(mazeState[currentX][currentY] == 1 && stillUnexplored){
-            //go to the unexplored cell
-            if(unexploredX > currentX){
-                deltaX = 1;
-            }
-            if(unexploredX < currentX){
-                deltaX = -1;
-            }
-            if(unexploredY > currentY){
+
+        if(stillUnexplored){
+            int directionToGo = findPathTo(unexploredX, unexploredY);
+            if(directionToGo == 1){
+                deltaX = 0;
                 deltaY = 1;
             }
-            if(unexploredY < currentY){
+            if(directionToGo == 2){
+                deltaX = 1;
+                deltaY = 0;
+            }
+            if(directionToGo == 3){
+                deltaX = 0;
                 deltaY = -1;
+            }
+            if(directionToGo == 4){
+                deltaX = -1;
+                deltaY = 0;
             }
             if(deltaX == beforeX && deltaY == beforeY){
                 return MOVE_FORWARD;
+            }
+            if(deltaX == -beforeX && deltaY == -beforeY){
+                return U_TURN;
             }
             if(deltaX == beforeY && deltaY == -beforeX){
                 return TURN_RIGHT;
@@ -234,14 +240,80 @@ public:
             if(deltaX == -beforeY && deltaY == beforeX){
                 return TURN_LEFT;
             }
-            if(deltaX == -beforeX && deltaY == -beforeY){
-                return U_TURN;
-            }
-            return MOVE_BACKWARD;
+            return U_TURN; //no path found sad sad more sad :(
         }
+
+
+
+        deltaX = -beforeX;
+        deltaY = -beforeY;     
         return U_TURN;
     }
 
+    int findPathTo(uint8_t x, uint8_t y) {
+        //make an array of all the lengths from the (x,y) to the part in the array
+        uint8_t pathLength[GlobalConstants::MAZE_HEIGHT][GlobalConstants::MAZE_WIDTH] ;
+        for (uint8_t i = 0; i < GlobalConstants::MAZE_HEIGHT; ++i) {
+            for (uint8_t j = 0; j < GlobalConstants::MAZE_WIDTH; ++j) {
+                pathLength[j][i] = -1; // Initialize path lengths to 0
+            }
+        }
+        pathLength[y][x] = 0; // Start position
+        //mark all the blocked cells
+        for (uint8_t i = 0; i < GlobalConstants::MAZE_HEIGHT; ++i) {
+            for (uint8_t j = 0; j < GlobalConstants::MAZE_WIDTH; ++j) {
+                if (mazeState[j][i] == STATE_BLOCKED) {
+                    pathLength[j][i] = -2; // Mark blocked cells
+                }
+            }
+        }
+        bool done = false;
+        int currentPathLength = 0;
+        while(!done){
+            bool foundLongerPath = false;
+            for (uint8_t i = 0; i < GlobalConstants::MAZE_HEIGHT; ++i) {
+                for (uint8_t j = 0; j < GlobalConstants::MAZE_WIDTH; ++j) {
+                    if(pathLength[j][i] == currentPathLength) {
+                        // Check all 4 directions and update path lengths
+                        if (i > 0 && pathLength[j-1][i] == -1) {
+                            foundLongerPath = true;
+                            pathLength[j-1][i] = currentPathLength + 1;
+                        }
+                        if (i < GlobalConstants::MAZE_HEIGHT - 1 && pathLength[j+1][i] == -1) {
+                            foundLongerPath = true;
+                            pathLength[j+1][i] = currentPathLength + 1;
+                        }
+                        if (j > 0 && pathLength[j][i-1] == -1) {
+                            foundLongerPath = true;
+                            pathLength[j][i-1] = currentPathLength + 1;
+                        }
+                        if (j < GlobalConstants::MAZE_WIDTH - 1 && pathLength[j][i+1] == -1) {
+                            foundLongerPath = true;
+                            pathLength[j][i+1] = currentPathLength + 1;
+                        }
+                    }
+                }
+            }
+            if(!foundLongerPath){
+                done = true;
+            }
+            currentPathLength++;
+        }
+        int curOnPathLength = pathLength[currentX][currentY];
+        if(currentY != GlobalConstants::MAZE_HEIGHT && pathLength[currentX+1][currentY] == curOnPathLength-1){
+            return 1; // North
+        }
+        if(currentX != GlobalConstants::MAZE_WIDTH && pathLength[currentX][currentY+1] == curOnPathLength-1){
+            return 2; // East
+        }
+        if(currentY != 0 && pathLength[currentX-1][currentY] == curOnPathLength-1){
+            return 3; // South
+        }
+        if(currentX != 0 && pathLength[currentX][currentY-1] == curOnPathLength-1){
+            return 4; // West
+        }
+        return 0; // No path found
+    };
 
     //getters
     uint8_t getCurrentX() const { return currentX; }

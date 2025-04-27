@@ -165,7 +165,7 @@ void test_explore(void)
 {
     drawMaze(solver); // Draw the maze before exploring
     int limiter = 0; 
-    int maxSteps = 20; // Maximum steps to explore the maze
+    int maxSteps = 35; // Maximum steps to explore the maze
     MazeSolver::Action action ; // Initial action
 
     do{
