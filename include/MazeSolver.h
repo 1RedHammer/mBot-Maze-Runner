@@ -142,147 +142,142 @@ public:
 
     Action decideNextMove() {
 
-        mode = MODE_EXPLORING; // Default mode
-
-        bool directionRuledOut[4] = {false, false, false, false}; // N, E, S, W 
-
-        // Check all 4 directions and update based on mazeState
-
-        // Check if the current position is at the edge of the maze
-        if (currentRow == 0) {
-            directionRuledOut[NORTH] = true;
-        }
-        if (currentColumn == GlobalConstants::MAZE_WIDTH - 1) {
-            directionRuledOut[EAST] = true;
-        }
-        if (currentColumn == 0) {
-            directionRuledOut[WEST] = true;
-        }
-        if (currentRow == GlobalConstants::MAZE_HEIGHT - 1) {
-            directionRuledOut[SOUTH] = true;
-        }
-
-        // Check if the adjacent cells are blocked or visited
-        if (mazeState[currentRow + 1][currentColumn] == STATE_BLOCKED || mazeState[currentRow + 1][currentColumn] == STATE_VISITED) {
-            directionRuledOut[SOUTH] = true;
-        }
-        if (mazeState[currentRow - 1][currentColumn] == STATE_BLOCKED || mazeState[currentRow - 1][currentColumn] == STATE_VISITED) {
-            directionRuledOut[NORTH] = true;
-        }
-        if (mazeState[currentRow][currentColumn + 1] == STATE_BLOCKED || mazeState[currentRow][currentColumn + 1] == STATE_VISITED) {
-            directionRuledOut[EAST] = true;
-        }
-        if (mazeState[currentRow][currentColumn - 1] == STATE_BLOCKED || mazeState[currentRow][currentColumn - 1] == STATE_VISITED) {
-            directionRuledOut[WEST] = true;
-        }
-
+        Direction directionToGo = NONE; // Initialize direction to go
         // Keep track of the previous direction
         int beforeDeltaColumn = deltaColumn;
         int beforeDeltaRow = deltaRow;
 
-        // Try to turn right first        
-        deltaRow = beforeDeltaColumn;
-        deltaColumn = -beforeDeltaRow;
+        if (mode == MODE_EXPLORING || mode == MODE_EXPLORING_WITH_PATHFINDING) {
+         
+            mode = MODE_EXPLORING; // Default exploring mode
 
-        if (deltaColumn == 0 && deltaRow == -1 && !directionRuledOut[NORTH]) {
-            return TURN_RIGHT;
-        }
-        if (deltaColumn == 1 && deltaRow == 0 && !directionRuledOut[EAST]) {
-            return TURN_RIGHT;
-        }
-        if (deltaColumn == 0 && deltaRow == 1 && !directionRuledOut[SOUTH]) {
-            return TURN_RIGHT;
-        }
-        if (deltaColumn == -1 && deltaRow == 0 && !directionRuledOut[WEST]) {
-            return TURN_RIGHT;
-        }
+            bool directionRuledOut[4] = {false, false, false, false}; // N, E, S, W 
 
-        // Try to go forward
-        deltaRow = beforeDeltaRow;
-        deltaColumn = beforeDeltaColumn;
-        if (deltaColumn == 0 && deltaRow == -1 && !directionRuledOut[NORTH]) {            
-            return MOVE_FORWARD;
-        }
-        if (deltaColumn == 1 && deltaRow == 0 && !directionRuledOut[EAST]) {            
-            return MOVE_FORWARD;
-        }
-        if (deltaColumn == 0 && deltaRow == 1 && !directionRuledOut[SOUTH]) {            
-            return MOVE_FORWARD;
-        }
-        if (deltaColumn == -1 && deltaRow == 0 && !directionRuledOut[WEST]) {            
-            return MOVE_FORWARD;
-        }
+            // Check all 4 directions and update based on mazeState
 
-        // Try to turn left        
-        deltaRow = -beforeDeltaColumn;
-        deltaColumn = beforeDeltaRow;
-        if (deltaColumn == 0 && deltaRow == -1 && !directionRuledOut[NORTH]) {
-            return TURN_LEFT;
-        }
-        if (deltaColumn == 1 && deltaRow == 0 && !directionRuledOut[EAST]) {
-            return TURN_LEFT;
-        }
-        if (deltaColumn == 0 && deltaRow == 1 && !directionRuledOut[SOUTH]) {
-            return TURN_LEFT;
-        }
-        if (deltaColumn == -1 && deltaRow == 0 && !directionRuledOut[WEST]) {
-            return TURN_LEFT;
-        }
-
-        // No way to go, find the unexplored cell and go there
-        bool stillUnexplored = false;
-        int unexploredColumn = -1;
-        int unexploredRow = -1;
-        for (int row = 0; row < GlobalConstants::MAZE_HEIGHT; row++) {
-            for (int column = 0; column < GlobalConstants::MAZE_WIDTH; column++) {
-                if (mazeState[row][column] == STATE_UNEXPLORED) {
-                    stillUnexplored = true;
-                    unexploredColumn = column;
-                    unexploredRow = row;
-                    break;
-                }
+            // Check if the current position is at the edge of the maze
+            if (currentRow == 0) {
+                directionRuledOut[NORTH] = true;
             }
-        }
+            if (currentColumn == GlobalConstants::MAZE_WIDTH - 1) {
+                directionRuledOut[EAST] = true;
+            }
+            if (currentColumn == 0) {
+                directionRuledOut[WEST] = true;
+            }
+            if (currentRow == GlobalConstants::MAZE_HEIGHT - 1) {
+                directionRuledOut[SOUTH] = true;
+            }
 
-        if (stillUnexplored) {
-            mode = MODE_EXPLORING_WITH_PATHFINDING; // Set the mode to exploring with pathfinding
+            // Check if the adjacent cells are blocked or visited
+            if (mazeState[currentRow + 1][currentColumn] == STATE_BLOCKED || mazeState[currentRow + 1][currentColumn] == STATE_VISITED) {
+                directionRuledOut[SOUTH] = true;
+            }
+            if (mazeState[currentRow - 1][currentColumn] == STATE_BLOCKED || mazeState[currentRow - 1][currentColumn] == STATE_VISITED) {
+                directionRuledOut[NORTH] = true;
+            }
+            if (mazeState[currentRow][currentColumn + 1] == STATE_BLOCKED || mazeState[currentRow][currentColumn + 1] == STATE_VISITED) {
+                directionRuledOut[EAST] = true;
+            }
+            if (mazeState[currentRow][currentColumn - 1] == STATE_BLOCKED || mazeState[currentRow][currentColumn - 1] == STATE_VISITED) {
+                directionRuledOut[WEST] = true;
+            }
 
-            Direction directionToGo = findPathTo(unexploredRow, unexploredColumn);
 
-            if (directionToGo == NORTH) {
-                deltaColumn = 0;
-                deltaRow = -1;
+
+            // Try to turn right first        
+            deltaRow = beforeDeltaColumn;
+            deltaColumn = -beforeDeltaRow;
+
+            if (deltaColumn == 0 && deltaRow == -1 && !directionRuledOut[NORTH]) {
+                return TURN_RIGHT;
             }
-            if (directionToGo == EAST) {
-                deltaColumn = 1;
-                deltaRow = 0;
+            if (deltaColumn == 1 && deltaRow == 0 && !directionRuledOut[EAST]) {
+                return TURN_RIGHT;
             }
-            if (directionToGo == SOUTH) {
-                deltaColumn = 0;
-                deltaRow = 1;
+            if (deltaColumn == 0 && deltaRow == 1 && !directionRuledOut[SOUTH]) {
+                return TURN_RIGHT;
             }
-            if (directionToGo == WEST) {
-                deltaColumn = -1;
-                deltaRow = 0;
+            if (deltaColumn == -1 && deltaRow == 0 && !directionRuledOut[WEST]) {
+                return TURN_RIGHT;
             }
-            if (deltaColumn == beforeDeltaColumn && deltaRow == beforeDeltaRow) {
+
+            // Try to go forward
+            deltaRow = beforeDeltaRow;
+            deltaColumn = beforeDeltaColumn;
+            if (deltaColumn == 0 && deltaRow == -1 && !directionRuledOut[NORTH]) {            
                 return MOVE_FORWARD;
             }
-            if (deltaColumn == -beforeDeltaColumn && deltaRow == -beforeDeltaRow) {
-                return U_TURN;
+            if (deltaColumn == 1 && deltaRow == 0 && !directionRuledOut[EAST]) {            
+                return MOVE_FORWARD;
             }
-            if (deltaColumn == beforeDeltaRow && deltaRow == -beforeDeltaColumn) {
+            if (deltaColumn == 0 && deltaRow == 1 && !directionRuledOut[SOUTH]) {            
+                return MOVE_FORWARD;
+            }
+            if (deltaColumn == -1 && deltaRow == 0 && !directionRuledOut[WEST]) {            
+                return MOVE_FORWARD;
+            }
+
+            // Try to turn left        
+            deltaRow = -beforeDeltaColumn;
+            deltaColumn = beforeDeltaRow;
+            if (deltaColumn == 0 && deltaRow == -1 && !directionRuledOut[NORTH]) {
                 return TURN_LEFT;
             }
-            if (deltaColumn == -beforeDeltaRow && deltaRow == beforeDeltaColumn) {
-                return TURN_RIGHT;
-            }            
-        }
-        else 
+            if (deltaColumn == 1 && deltaRow == 0 && !directionRuledOut[EAST]) {
+                return TURN_LEFT;
+            }
+            if (deltaColumn == 0 && deltaRow == 1 && !directionRuledOut[SOUTH]) {
+                return TURN_LEFT;
+            }
+            if (deltaColumn == -1 && deltaRow == 0 && !directionRuledOut[WEST]) {
+                return TURN_LEFT;
+            }
+
+            // No way to go, find the unexplored cell and go there
+            bool stillUnexplored = false;
+            int unexploredColumn = -1;
+            int unexploredRow = -1;
+            for (int row = 0; row < GlobalConstants::MAZE_HEIGHT; row++) {
+                for (int column = 0; column < GlobalConstants::MAZE_WIDTH; column++) {
+                    if (mazeState[row][column] == STATE_UNEXPLORED) {
+                        stillUnexplored = true;
+                        unexploredColumn = column;
+                        unexploredRow = row;
+                        break;
+                    }
+                }
+            }
+
+            if (stillUnexplored) {
+                mode = MODE_EXPLORING_WITH_PATHFINDING; // Set the mode to exploring with pathfinding
+                directionToGo = findPathTo(unexploredRow, unexploredColumn);
+                return determineActionBasedOnDirection(directionToGo, beforeDeltaColumn, beforeDeltaRow);
+            }
+            else 
+            {
+                mode = MODE_RETURNING_HOME; // Set the mode to returning home        
+            }
+
+        } // End of exploring mode
+        
+
+        if (mode == MODE_RETURNING_HOME) 
         {
-            mode = MODE_RETURNING_HOME; // Set the mode to returning home
-            // TODO: Implement logic to return home            
+            directionToGo = findPathTo(startRow, startColumn); // Find path to the starting point
+            if (directionToGo != NONE) {
+                return determineActionBasedOnDirection(directionToGo, beforeDeltaColumn, beforeDeltaRow); // Move towards the starting point
+            } else {
+                mode = MODE_RACING_TO_GOAL; // Set the mode to racing to the goal
+            }
         }
+
+        if (mode == MODE_RACING_TO_GOAL) {
+            directionToGo = findPathTo(targetRow, targetColumn); // Find path to the target
+            if (directionToGo != NONE) {
+                return determineActionBasedOnDirection(directionToGo, beforeDeltaColumn, beforeDeltaRow); // Move towards the target
+            } 
+        }        
 
         // No unexplored cells found, stop the robot, for now
         deltaColumn = 0;
@@ -362,8 +357,37 @@ public:
         return NONE; // No path found
     };
 
-
-
+    Action determineActionBasedOnDirection(Direction directionToGo, int beforeDeltaColumn, int beforeDeltaRow) {
+        if (directionToGo == NORTH) {
+            deltaColumn = 0;
+            deltaRow = -1;
+        }
+        if (directionToGo == EAST) {
+            deltaColumn = 1;
+            deltaRow = 0;
+        }
+        if (directionToGo == SOUTH) {
+            deltaColumn = 0;
+            deltaRow = 1;
+        }
+        if (directionToGo == WEST) {
+            deltaColumn = -1;
+            deltaRow = 0;
+        }
+        if (deltaColumn == beforeDeltaColumn && deltaRow == beforeDeltaRow) {
+            return MOVE_FORWARD;
+        }
+        if (deltaColumn == -beforeDeltaColumn && deltaRow == -beforeDeltaRow) {
+            return U_TURN;
+        }
+        if (deltaColumn == beforeDeltaRow && deltaRow == -beforeDeltaColumn) {
+            return TURN_LEFT;
+        }
+        if (deltaColumn == -beforeDeltaRow && deltaRow == beforeDeltaColumn) {
+            return TURN_RIGHT;
+        }
+        return STOP; // Default action if no valid direction is found
+    }
 
     int8_t getMode() const { return mode; }
 
@@ -416,10 +440,8 @@ public:
         targetRow = GlobalConstants::MAZE_HEIGHT - 1 - y; // Reverse the Y-axis
     }
     
-    void setStateAtCoordinates(uint8_t x, uint8_t y, uint8_t value) {
-        if (x < GlobalConstants::MAZE_WIDTH && y < GlobalConstants::MAZE_HEIGHT) {
-            mazeState[GlobalConstants::MAZE_HEIGHT - 1 - y][x] = value; // Reverse the Y-axis
-        }        
+    void setStateAtCoordinates(uint8_t x, uint8_t y, uint8_t value) {        
+        mazeState[GlobalConstants::MAZE_HEIGHT - 1 - y][x] = value; // Reverse the Y-axis        
     }
     
 };

@@ -23,9 +23,9 @@ const std::string
 
 mazePic[4] = {
     "...$",
-    "...?",
+    ".?.?",
     ".?..",    
-    "A..."
+    "A?.."
 };
 /*
 mazePic[3] = {
@@ -189,7 +189,7 @@ void test_explore(void)
     printf("Starting state of the maze:\n");
     drawMaze(solver); // Draw the maze before exploring
     int limiter = 0; 
-    int maxSteps = 25; // Maximum steps to explore the maze
+    int maxSteps = 40; // Maximum steps to explore the maze
     MazeSolver::IntersectionResult result ;
 
     do{
