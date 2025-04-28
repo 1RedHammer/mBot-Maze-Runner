@@ -10,9 +10,9 @@ class MazeSolver {
 private:
     
     // Start and target positions in the maze
-    uint8_t startX = 0, startY = 0;
-    uint8_t targetX = 3, targetY = 3;    
-
+    uint8_t startColumn, startRow;
+    uint8_t targetColumn, targetRow;    
+            
     // Maze state tracking:
     // 0 = unexplored
     // 1 = visited
@@ -20,23 +20,70 @@ private:
     uint8_t mazeState[GlobalConstants::MAZE_HEIGHT][GlobalConstants::MAZE_WIDTH];
     
     // Current position and facing direction
-    uint8_t currentX, currentY;         // Position coordinates
-    int8_t deltaX, deltaY;              // Direction vector (e.g. North = 0,1)
+    uint8_t currentColumn, currentRow;         // Position coordinates
+    int8_t deltaColumn, deltaRow;              // Direction vector (e.g. North = 0,1)
 
-    int8_t mode = MODE_EXPLORING; // Default mode
+    
+    //getters
+    uint8_t getCurrentColumn() const { return currentColumn; }
+    uint8_t getCurrentRow() const { return currentRow; }
+    int8_t getDeltaColumn() const { return deltaColumn; }
+    int8_t getDeltaRow() const { return deltaRow; }
+    int8_t getTargetColumn() const { return targetColumn; }
+    int8_t getTargetRow() const { return targetRow; }
 
 public:
-    // Initialize a new maze with all spaces unexplored
-    MazeSolver() : currentX(startX), currentY(startY), deltaX(0), deltaY(1) {
-        
-        for (uint8_t y = 0; y < GlobalConstants::MAZE_HEIGHT; ++y) {
-            for (uint8_t x = 0; x < GlobalConstants::MAZE_WIDTH; ++x) {
-                mazeState[y][x] = 0; // Unexplored
+
+    enum Direction {
+        NORTH = 0,
+        EAST = 1,
+        SOUTH = 2,
+        WEST = 3,
+        NONE = -1    
+    };
+   
+    // Constructor with start and target positions
+    MazeSolver(uint8_t startX, uint8_t startY, uint8_t targetX, uint8_t targetY, MazeSolver::Direction startDirection) 
+        : startColumn(startX), startRow(GlobalConstants::MAZE_HEIGHT - 1 - startY),
+          targetColumn(targetX), targetRow(GlobalConstants::MAZE_HEIGHT - 1 - targetY),
+          currentColumn(startX), currentRow(GlobalConstants::MAZE_HEIGHT - 1 - startY)
+        {
+
+        // Initialize the maze state to unexplored (0)
+        for (uint8_t row = 0; row < GlobalConstants::MAZE_HEIGHT; ++row) {
+            for (uint8_t column = 0; column < GlobalConstants::MAZE_WIDTH; ++column) {
+                mazeState[row][column] = 0; // Unexplored
             }
         }
+        mazeState[startRow][startColumn] = 1; // Mark start as visited
 
-        mazeState[startY][startX] = 1; // Mark start as visited
+        // Set the initial direction based on the start direction
+        switch (startDirection) {
+            case NORTH:
+                deltaColumn = 0;
+                deltaRow = -1;
+                break;
+            case EAST:
+                deltaColumn = 1;
+                deltaRow = 0;
+                break;
+            case SOUTH:
+                deltaColumn = 0;
+                deltaRow = 1;
+                break;
+            case WEST:
+                deltaColumn = -1;
+                deltaRow = 0;
+                break;            
+        }
+        
     }
+
+    enum State {
+        STATE_UNEXPLORED = 0, // Unexplored cell
+        STATE_VISITED = 1,    // Visited cell
+        STATE_BLOCKED = 2     // Blocked cell
+    };
 
     enum Action {
         STOP = 0,
@@ -49,247 +96,244 @@ public:
 
     enum Mode {
         MODE_EXPLORING = 0,       // Exploring and mapping the maze
-        MODE_RETURNING_HOME = 1,  // Returning to the starting point
-        MODE_RACING_TO_GOAL = 2   // Racing to the target or goal
+        MODE_EXPLORING_WITH_PATHFINDING = 1, // Exploring with pathfinding
+        MODE_RETURNING_HOME = 2,  // Returning to the starting point
+        MODE_RACING_TO_GOAL = 3   // Racing to the target or goal
     };
 
-    enum State {
-        STATE_UNEXPLORED = 0, // Unexplored cell
-        STATE_VISITED = 1,    // Visited cell
-        STATE_BLOCKED = 2     // Blocked cell
-    };
+    Mode mode = MODE_EXPLORING; // Default mode
+
 
     // Record current position as visited or blocked
     void markCurrentPosition(State state) {        
-        mazeState[currentX][currentY] = state; // Mark current position
+        mazeState[currentRow][currentColumn] = state; // Mark current position
     }
 
     void updatePosition() {        
-        currentX += deltaX;
-        currentY += deltaY;
+        currentColumn += deltaColumn;
+        currentRow += deltaRow;
     }
 
-    Action processIntersection(State state) {
+    struct IntersectionResult {
+        Action action;
+        int8_t deltaX;
+        int8_t deltaY;
+        Mode mode;
+        uint8_t currentX;
+        uint8_t currentY;                
+    };
+
+    IntersectionResult processIntersection(State state) {
         updatePosition(); // Update the robot's position in the maze
         markCurrentPosition(state); // Mark current position as visited
 
         if (state == STATE_BLOCKED) {
+            // Update deltaColumn and deltaRow to the opposite direction
+            deltaColumn = -deltaColumn;
+            deltaRow = -deltaRow;
 
-            //update deltaX and deltaY to the opposite direction
-            deltaX = -deltaX;
-            deltaY = -deltaY;            
-
-            return U_TURN; // If blocked, turn around
+            return {U_TURN, getDeltaX(), getDeltaY(), mode, getCurrentX(), getCurrentY()}; // If blocked, turn around
         }
 
-        return decideNextMove();
+        Action nextAction = decideNextMove();
+
+        return {nextAction, getDeltaX(), getDeltaY(), mode, getCurrentX(), getCurrentY()};
     }
 
-    Action decideNextMove(){
-                
-        // TODO: decide where to go next
-        int nextMovesImpossible[4] = {0, 0, 0, 0}; // N, E, S, W 
-        // Check all 4 directions and update nextMoves based on mazeState
-        if(currentX == 0){
-            nextMovesImpossible[3] = 1;
+    Action decideNextMove() {
+
+        mode = MODE_EXPLORING; // Default mode
+
+        bool directionRuledOut[4] = {false, false, false, false}; // N, E, S, W 
+
+        // Check all 4 directions and update based on mazeState
+
+        // Check if the current position is at the edge of the maze
+        if (currentRow == 0) {
+            directionRuledOut[NORTH] = true;
         }
-        if(currentX == GlobalConstants::MAZE_WIDTH - 1){
-            nextMovesImpossible[1] = 1;
+        if (currentColumn == GlobalConstants::MAZE_WIDTH - 1) {
+            directionRuledOut[EAST] = true;
         }
-        if(currentY == 0){
-            nextMovesImpossible[2] = 1;
+        if (currentColumn == 0) {
+            directionRuledOut[WEST] = true;
         }
-        if(currentY == GlobalConstants::MAZE_HEIGHT - 1){
-            nextMovesImpossible[0] = 1;
+        if (currentRow == GlobalConstants::MAZE_HEIGHT - 1) {
+            directionRuledOut[SOUTH] = true;
         }
-        if(mazeState[currentX][currentY+1] == 2 || mazeState[currentX][currentY+1] == 1){
-            nextMovesImpossible[0] = 1;
+
+        // Check if the adjacent cells are blocked or visited
+        if (mazeState[currentRow + 1][currentColumn] == STATE_BLOCKED || mazeState[currentRow + 1][currentColumn] == STATE_VISITED) {
+            directionRuledOut[SOUTH] = true;
         }
-        if(mazeState[currentX][currentY-1] == 2 || mazeState[currentX][currentY-1] == 1){
-            nextMovesImpossible[2] = 1;
+        if (mazeState[currentRow - 1][currentColumn] == STATE_BLOCKED || mazeState[currentRow - 1][currentColumn] == STATE_VISITED) {
+            directionRuledOut[NORTH] = true;
         }
-        if(mazeState[currentX+1][currentY] == 2 || mazeState[currentX+1][currentY] == 1){
-            nextMovesImpossible[1] = 1;
+        if (mazeState[currentRow][currentColumn + 1] == STATE_BLOCKED || mazeState[currentRow][currentColumn + 1] == STATE_VISITED) {
+            directionRuledOut[EAST] = true;
         }
-        if(mazeState[currentX-1][currentY] == 2 || mazeState[currentX-1][currentY] == 1){
-            nextMovesImpossible[3] = 1;
+        if (mazeState[currentRow][currentColumn - 1] == STATE_BLOCKED || mazeState[currentRow][currentColumn - 1] == STATE_VISITED) {
+            directionRuledOut[WEST] = true;
         }
-      
-        
-        
-        int beforeX = deltaX;
-        int beforeY = deltaY;
-        deltaX = beforeY;
-        deltaY = -beforeX;
-        //turn right
-        if(deltaX == 0 && deltaY == 1){
-            if(nextMovesImpossible[0] == 0){
-                return TURN_RIGHT;
-            }
+
+        // Keep track of the previous direction
+        int beforeDeltaColumn = deltaColumn;
+        int beforeDeltaRow = deltaRow;
+
+        // Try to turn right first        
+        deltaRow = beforeDeltaColumn;
+        deltaColumn = -beforeDeltaRow;
+
+        if (deltaColumn == 0 && deltaRow == -1 && !directionRuledOut[NORTH]) {
+            return TURN_RIGHT;
         }
-        if(deltaX == 1 && deltaY == 0){
-            if(nextMovesImpossible[1] == 0){
-                return TURN_RIGHT;
-            }
+        if (deltaColumn == 1 && deltaRow == 0 && !directionRuledOut[EAST]) {
+            return TURN_RIGHT;
         }
-        if(deltaX == 0 && deltaY == -1){
-            if(nextMovesImpossible[2] == 0){
-                return TURN_RIGHT;
-            }
+        if (deltaColumn == 0 && deltaRow == 1 && !directionRuledOut[SOUTH]) {
+            return TURN_RIGHT;
         }
-        if(deltaX == -1 && deltaY == 0){
-            if(nextMovesImpossible[3] == 0){
-                return TURN_RIGHT;
-            }
+        if (deltaColumn == -1 && deltaRow == 0 && !directionRuledOut[WEST]) {
+            return TURN_RIGHT;
         }
-        //if can't turn right, go forward
-        if(beforeX == 0 && beforeY == 1){
-            if(nextMovesImpossible[0] == 0){
-                deltaX = beforeX;
-                deltaY = beforeY;
-                return MOVE_FORWARD;
-            }
+
+        // Try to go forward
+        deltaRow = beforeDeltaRow;
+        deltaColumn = beforeDeltaColumn;
+        if (deltaColumn == 0 && deltaRow == -1 && !directionRuledOut[NORTH]) {            
+            return MOVE_FORWARD;
         }
-        if(beforeX == 1 && beforeY == 0){
-            if(nextMovesImpossible[1] == 0){
-                deltaX = beforeX;
-                deltaY = beforeY;
-                return MOVE_FORWARD;
-            }
+        if (deltaColumn == 1 && deltaRow == 0 && !directionRuledOut[EAST]) {            
+            return MOVE_FORWARD;
         }
-        if(beforeX == 0 && beforeY == -1){
-            if(nextMovesImpossible[2] == 0){
-                deltaX = beforeX;
-                deltaY = beforeY;
-                return MOVE_FORWARD;
-            }
+        if (deltaColumn == 0 && deltaRow == 1 && !directionRuledOut[SOUTH]) {            
+            return MOVE_FORWARD;
         }
-        if(beforeX == -1 && beforeY == 0){
-            if(nextMovesImpossible[3] == 0){
-                deltaX = beforeX;
-                deltaY = beforeY;
-                return MOVE_FORWARD;
-            }
+        if (deltaColumn == -1 && deltaRow == 0 && !directionRuledOut[WEST]) {            
+            return MOVE_FORWARD;
         }
-        //if can't go forward, turn left
-        deltaX = -beforeY;
-        deltaY = beforeX;
-        if(deltaX == 0 && deltaY == 1){
-            if(nextMovesImpossible[0] == 0){
-                return TURN_LEFT;
-            }
+
+        // Try to turn left        
+        deltaRow = -beforeDeltaColumn;
+        deltaColumn = beforeDeltaRow;
+        if (deltaColumn == 0 && deltaRow == -1 && !directionRuledOut[NORTH]) {
+            return TURN_LEFT;
         }
-        if(deltaX == 1 && deltaY == 0){
-            if(nextMovesImpossible[1] == 0){
-                return TURN_LEFT;
-            }
+        if (deltaColumn == 1 && deltaRow == 0 && !directionRuledOut[EAST]) {
+            return TURN_LEFT;
         }
-        if(deltaX == 0 && deltaY == -1){
-            if(nextMovesImpossible[2] == 0){
-                return TURN_LEFT;
-            }
+        if (deltaColumn == 0 && deltaRow == 1 && !directionRuledOut[SOUTH]) {
+            return TURN_LEFT;
         }
-        if(deltaX == -1 && deltaY == 0){
-            if(nextMovesImpossible[3] == 0){
-                return TURN_LEFT;
-            }
+        if (deltaColumn == -1 && deltaRow == 0 && !directionRuledOut[WEST]) {
+            return TURN_LEFT;
         }
-        
-        //no way to go, turn around
+
+        // No way to go, find the unexplored cell and go there
         bool stillUnexplored = false;
-        int unexploredX = -1;
-        int unexploredY = -1;
-        for (int y = 0; y < GlobalConstants::MAZE_HEIGHT; y++){
-            for (int x = 0; x < GlobalConstants::MAZE_WIDTH; x++){
-                if (mazeState[x][y] == 0){
+        int unexploredColumn = -1;
+        int unexploredRow = -1;
+        for (int row = 0; row < GlobalConstants::MAZE_HEIGHT; row++) {
+            for (int column = 0; column < GlobalConstants::MAZE_WIDTH; column++) {
+                if (mazeState[row][column] == STATE_UNEXPLORED) {
                     stillUnexplored = true;
-                    unexploredX = x;
-                    unexploredY = y;
+                    unexploredColumn = column;
+                    unexploredRow = row;
                     break;
                 }
             }
         }
 
-        if(stillUnexplored){
-            int directionToGo = findPathTo(unexploredX, unexploredY);
-            if(directionToGo == 1){
-                deltaX = 0;
-                deltaY = 1;
+        if (stillUnexplored) {
+            mode = MODE_EXPLORING_WITH_PATHFINDING; // Set the mode to exploring with pathfinding
+
+            Direction directionToGo = findPathTo(unexploredRow, unexploredColumn);
+
+            if (directionToGo == NORTH) {
+                deltaColumn = 0;
+                deltaRow = -1;
             }
-            if(directionToGo == 2){
-                deltaX = 1;
-                deltaY = 0;
+            if (directionToGo == EAST) {
+                deltaColumn = 1;
+                deltaRow = 0;
             }
-            if(directionToGo == 3){
-                deltaX = 0;
-                deltaY = -1;
+            if (directionToGo == SOUTH) {
+                deltaColumn = 0;
+                deltaRow = 1;
             }
-            if(directionToGo == 4){
-                deltaX = -1;
-                deltaY = 0;
+            if (directionToGo == WEST) {
+                deltaColumn = -1;
+                deltaRow = 0;
             }
-            if(deltaX == beforeX && deltaY == beforeY){
+            if (deltaColumn == beforeDeltaColumn && deltaRow == beforeDeltaRow) {
                 return MOVE_FORWARD;
             }
-            if(deltaX == -beforeX && deltaY == -beforeY){
+            if (deltaColumn == -beforeDeltaColumn && deltaRow == -beforeDeltaRow) {
                 return U_TURN;
             }
-            if(deltaX == beforeY && deltaY == -beforeX){
-                return TURN_RIGHT;
-            }
-            if(deltaX == -beforeY && deltaY == beforeX){
+            if (deltaColumn == beforeDeltaRow && deltaRow == -beforeDeltaColumn) {
                 return TURN_LEFT;
             }
-            return U_TURN; //no path found sad sad more sad :(
+            if (deltaColumn == -beforeDeltaRow && deltaRow == beforeDeltaColumn) {
+                return TURN_RIGHT;
+            }            
+        }
+        else 
+        {
+            mode = MODE_RETURNING_HOME; // Set the mode to returning home
+            // TODO: Implement logic to return home            
         }
 
-
-
-        deltaX = -beforeX;
-        deltaY = -beforeY;     
-        return U_TURN;
+        // No unexplored cells found, stop the robot, for now
+        deltaColumn = 0;
+        deltaRow = 0;
+        return STOP;
     }
 
-    int findPathTo(uint8_t x, uint8_t y) {
-        //make an array of all the lengths from the (x,y) to the part in the array
-        uint8_t pathLength[GlobalConstants::MAZE_HEIGHT][GlobalConstants::MAZE_WIDTH] ;
-        for (uint8_t i = 0; i < GlobalConstants::MAZE_HEIGHT; ++i) {
-            for (uint8_t j = 0; j < GlobalConstants::MAZE_WIDTH; ++j) {
-                pathLength[j][i] = -1; // Initialize path lengths to 0
+    Direction findPathTo(uint8_t row, uint8_t column) {
+        //make an new array to store the path lengths of each cell to the target cell [row][column]
+        int8_t pathLength[GlobalConstants::MAZE_HEIGHT][GlobalConstants::MAZE_WIDTH];
+
+        for (uint8_t r = 0; r < GlobalConstants::MAZE_HEIGHT; ++r) {
+            for (uint8_t c = 0; c < GlobalConstants::MAZE_WIDTH; ++c) {
+                pathLength[r][c] = -1; // Initialize path lengths to -1
             }
         }
-        pathLength[y][x] = 0; // Start position
+        pathLength[row][column] = 0; // the target cell is 0 away from itself
+
         //mark all the blocked cells
-        for (uint8_t i = 0; i < GlobalConstants::MAZE_HEIGHT; ++i) {
-            for (uint8_t j = 0; j < GlobalConstants::MAZE_WIDTH; ++j) {
-                if (mazeState[j][i] == STATE_BLOCKED) {
-                    pathLength[j][i] = -2; // Mark blocked cells
+        for (uint8_t r = 0; r < GlobalConstants::MAZE_HEIGHT; ++r) {
+            for (uint8_t c = 0; c < GlobalConstants::MAZE_WIDTH; ++c) {
+                if (mazeState[r][c] == STATE_BLOCKED) {
+                    pathLength[r][c] = -2; // Mark blocked cells
                 }
             }
         }
+
+        // Breadth-first search algorithm to find the shortest path lengths from the target cell
         bool done = false;
         int currentPathLength = 0;
         while(!done){
             bool foundLongerPath = false;
-            for (uint8_t i = 0; i < GlobalConstants::MAZE_HEIGHT; ++i) {
-                for (uint8_t j = 0; j < GlobalConstants::MAZE_WIDTH; ++j) {
-                    if(pathLength[j][i] == currentPathLength) {
+            for (uint8_t r = 0; r < GlobalConstants::MAZE_HEIGHT; ++r) {
+                for (uint8_t c = 0; c < GlobalConstants::MAZE_WIDTH; ++c) {
+                    if(pathLength[r][c] == currentPathLength) {
                         // Check all 4 directions and update path lengths
-                        if (i > 0 && pathLength[j-1][i] == -1) {
+                        if (r > 0 && pathLength[r-1][c] == -1) { // North
                             foundLongerPath = true;
-                            pathLength[j-1][i] = currentPathLength + 1;
+                            pathLength[r-1][c] = currentPathLength + 1;
                         }
-                        if (i < GlobalConstants::MAZE_HEIGHT - 1 && pathLength[j+1][i] == -1) {
+                        if (r < GlobalConstants::MAZE_HEIGHT - 1 && pathLength[r+1][c] == -1) { // South
                             foundLongerPath = true;
-                            pathLength[j+1][i] = currentPathLength + 1;
+                            pathLength[r+1][c] = currentPathLength + 1;
                         }
-                        if (j > 0 && pathLength[j][i-1] == -1) {
+                        if (c > 0 && pathLength[r][c-1] == -1) { // West    
                             foundLongerPath = true;
-                            pathLength[j][i-1] = currentPathLength + 1;
+                            pathLength[r][c-1] = currentPathLength + 1;
                         }
-                        if (j < GlobalConstants::MAZE_WIDTH - 1 && pathLength[j][i+1] == -1) {
+                        if (c < GlobalConstants::MAZE_WIDTH - 1 && pathLength[r][c+1] == -1) { // East
                             foundLongerPath = true;
-                            pathLength[j][i+1] = currentPathLength + 1;
+                            pathLength[r][c+1] = currentPathLength + 1;
                         }
                     }
                 }
@@ -299,59 +343,83 @@ public:
             }
             currentPathLength++;
         }
-        int curOnPathLength = pathLength[currentX][currentY];
-        if(currentY != GlobalConstants::MAZE_HEIGHT && pathLength[currentX+1][currentY] == curOnPathLength-1){
-            return 1; // North
+
+        // From the current runner position, find the direction to move based on the path length
+        int pathLengthFound = pathLength[currentRow][currentColumn];
+
+        if(currentRow != GlobalConstants::MAZE_HEIGHT-1  && pathLength[currentRow+1][currentColumn] == pathLengthFound-1){
+            return SOUTH;
         }
-        if(currentX != GlobalConstants::MAZE_WIDTH && pathLength[currentX][currentY+1] == curOnPathLength-1){
-            return 2; // East
+        if(currentColumn != GlobalConstants::MAZE_WIDTH-1 && pathLength[currentRow][currentColumn+1] == pathLengthFound-1){
+            return EAST;
         }
-        if(currentY != 0 && pathLength[currentX-1][currentY] == curOnPathLength-1){
-            return 3; // South
+        if(currentRow != 0 && pathLength[currentRow-1][currentColumn] == pathLengthFound - 1){
+            return NORTH;
         }
-        if(currentX != 0 && pathLength[currentX][currentY-1] == curOnPathLength-1){
-            return 4; // West
+        if(currentColumn != 0 && pathLength[currentRow][currentColumn-1] == pathLengthFound-1){
+            return WEST;
         }
-        return 0; // No path found
+        return NONE; // No path found
     };
 
-    //getters
-    uint8_t getCurrentX() const { return currentX; }
-    uint8_t getCurrentY() const { return currentY; }
-    int8_t getDeltaX() const { return deltaX; }
-    int8_t getDeltaY() const { return deltaY; }
-    int8_t getTargetX() const { return targetX; }
-    int8_t getTargetY() const { return targetY; }
+
+
+
     int8_t getMode() const { return mode; }
-    uint8_t getMazeCell(uint8_t x, uint8_t y) const {
-        return mazeState[y][x];
+
+    uint8_t getStateAtCoordinates(uint8_t x, uint8_t y) const {
+        return mazeState[GlobalConstants::MAZE_HEIGHT - 1 - y][x];
+    }
+
+    uint8_t getCurrentX() const { 
+        return currentColumn; // Column corresponds to X-coordinate
+    }
+
+    uint8_t getCurrentY() const { 
+        return GlobalConstants::MAZE_HEIGHT - 1 - currentRow; // Reverse the Y-axis
+    }
+
+    uint8_t getTargetX() const { 
+        return targetColumn; // Column corresponds to X-coordinate
+    }
+
+    uint8_t getTargetY() const { 
+        return GlobalConstants::MAZE_HEIGHT - 1 - targetRow; // Reverse the Y-axis
+    }
+
+    int8_t getDeltaX() const { 
+        return deltaColumn; // Column corresponds to X-coordinate
+    }
+
+    int8_t getDeltaY() const { 
+        return -deltaRow; // Return negative deltaRow to account for reversed Y-axis
     }
 
     //setters
     void setCurrent(uint8_t x, uint8_t y) {
-        currentX = x;
-        currentY = y;
+        currentColumn = x;
+        currentRow = GlobalConstants::MAZE_HEIGHT - 1 - y; // Reverse the Y-axis
     }
 
     void setDelta(int8_t x, int8_t y) {
-        deltaX = x;
-        deltaY = y;
+        deltaColumn = x;
+        deltaRow = -y; // Reverse the Y-axis
     }
 
-    void setStart(uint8_t x, uint8_t y) {
-        startX = x;
-        startY = y;
+    void setStart(uint8_t column, uint8_t row) {
+        startColumn = column;
+        startRow = GlobalConstants::MAZE_HEIGHT - 1 - row; // Reverse the Y-axis
     }
 
     void setTarget(uint8_t x, uint8_t y) {
-        targetX = x;
-        targetY = y;
+        targetColumn = x;
+        targetRow = GlobalConstants::MAZE_HEIGHT - 1 - y; // Reverse the Y-axis
     }
-
-    void setMode(int8_t newMode) { mode = newMode; }
-
-    void setMazeCell(uint8_t x, uint8_t y, uint8_t value) {
-        mazeState[x][y] = value;
+    
+    void setStateAtCoordinates(uint8_t x, uint8_t y, uint8_t value) {
+        if (x < GlobalConstants::MAZE_WIDTH && y < GlobalConstants::MAZE_HEIGHT) {
+            mazeState[GlobalConstants::MAZE_HEIGHT - 1 - y][x] = value; // Reverse the Y-axis
+        }        
     }
     
 };

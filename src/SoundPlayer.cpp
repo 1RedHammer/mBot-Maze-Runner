@@ -4,6 +4,8 @@
 // Ensure MelodyType is properly scoped
 using MelodyType = SoundPlayer::MelodyType;
 
+static constexpr int NOTE_SILENCE = 0; // Silence
+
 static constexpr int NOTE_C3 = 130;
 static constexpr int NOTE_D3 = 147;
 static constexpr int NOTE_E3 = 165;
@@ -53,8 +55,8 @@ struct Melody {
 static constexpr int obstacleNotes[] = {NOTE_F4, NOTE_D4};
 static constexpr int obstacleDurations[] = {100, 100};
 
-static constexpr int explorationNotes[] = {NOTE_G4, NOTE_A4, NOTE_B4};
-static constexpr int explorationDurations[] = {200, 200, 200};
+static constexpr int explorationNotes[] = {NOTE_SILENCE, NOTE_G4, NOTE_A4, NOTE_B4, NOTE_C5, NOTE_B4, NOTE_A4, NOTE_G4};
+static constexpr int explorationDurations[] = {1000, 200, 200, 200, 300, 200, 200, 300};
 
 static constexpr int raceStartingNotes[] = {NOTE_C4, NOTE_C4, NOTE_C4, NOTE_C5};
 static constexpr int raceStartingDurations[] = {300, 300, 300, 600};
@@ -64,12 +66,12 @@ static constexpr int raceCompletedDurations[] = {300, 300, 300, 600};
 
 static constexpr Melody melodies[] = {
     {SoundPlayer::OBSTACLE_ENCOUNTERED, obstacleNotes, obstacleDurations, 3},
-    {SoundPlayer::EXPLORATION_COMPLETED, explorationNotes, explorationDurations, 3},
+    {SoundPlayer::EXPLORATION_COMPLETED, explorationNotes, explorationDurations, 8},
     {SoundPlayer::RACE_STARTING, raceStartingNotes, raceStartingDurations, 4},
     {SoundPlayer::RACE_COMPLETED, raceCompletedNotes, raceCompletedDurations, 3}
 };
 
-void SoundPlayer::playMelody(MelodyType type) {
+void SoundPlayer::playMelody(MelodyType type) {    
     for (const Melody& melody : melodies) {
         if (melody.type == type) {
             for (int i = 0; i < melody.length; ++i) {
