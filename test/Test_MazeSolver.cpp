@@ -22,9 +22,9 @@ MazeSolver *solver;
 const std::string 
 
 mazePic[4] = {
-    "...$",
-    ".?.?",
-    ".?..",    
+    ".?.$",
+    ".???",
+    "....",    
     "A?.."
 };
 /*
@@ -43,12 +43,14 @@ struct drawMazeChars
     static const char CHAR_BLOCKED_Unkown = '?';  // Blocked cell unknown to the solver
     static const char CHAR_VISITED = 'o';    // Visited cell
     static const char CHAR_UNEXPLORED = '.'; // Unexplored cell
+    static const char CHAR_UNREACHABLE = '%'; // Unreachable cell
     static const char CHAR_RUNNER = '#';     // Runner symbol
     static const char CHAR_NORTH = 'A';      // North
     static const char CHAR_EAST = '>';       // East
     static const char CHAR_SOUTH = 'V';      // South
     static const char CHAR_WEST = '<';       // West
     static const char CHAR_Target = '$';     // Target
+
 };
 
 uint8_t toRowIndex(uint8_t y) {
@@ -94,22 +96,23 @@ void initMaze(MazeSolver *sv)
             else if (picCell == drawMazeChars::CHAR_NORTH)
             {
                 sv->setStateAtCoordinates(x, indexY, MazeSolver::State::STATE_VISITED);
-                sv->setDelta(0, 1); // Set delta to north
+                sv->setDirection(MazeSolver::Direction::NORTH); // Set direction to north
             }
             else if (picCell == drawMazeChars::CHAR_EAST)
             {
                 sv->setStateAtCoordinates(x, indexY, MazeSolver::State::STATE_VISITED);
-                sv->setDelta(1, 0); // Set delta to east
+                sv->setDirection(MazeSolver::Direction::EAST); // Set direction to east
+             
             }
             else if (picCell == drawMazeChars::CHAR_SOUTH)
             {
                 sv->setStateAtCoordinates(x, indexY, MazeSolver::State::STATE_VISITED);
-                sv->setDelta(0, -1); // Set delta to south
+                sv->setDirection(MazeSolver::Direction::SOUTH); // Set direction to south
             }
             else if (picCell == drawMazeChars::CHAR_WEST)
             {
                 sv->setStateAtCoordinates(x, indexY, MazeSolver::State::STATE_VISITED);
-                sv->setDelta(-1, 0); // Set delta to west
+                sv->setDirection(MazeSolver::Direction::WEST); // Set direction to west
             }
             else {
                 // Default case for unexplored cells (this include the '?')
@@ -139,10 +142,10 @@ char getCellSymbol(uint8_t x, uint8_t y, MazeSolver *sv) {
     //printf ("Current (x,y) (%d, %d)(%d, %d)\n", x,y, sv->getCurrentX(), sv->getCurrentY());
 
     if (x == sv->getCurrentX() && y == sv->getCurrentY()) {
-        if (sv->getDeltaX() == 0 && sv->getDeltaY() == 1) return drawMazeChars::CHAR_NORTH;
-        if (sv->getDeltaX() == 1 && sv->getDeltaY() == 0) return drawMazeChars::CHAR_EAST;
-        if (sv->getDeltaX() == 0 && sv->getDeltaY() == -1) return drawMazeChars::CHAR_SOUTH;
-        if (sv->getDeltaX() == -1 && sv->getDeltaY() == 0) return drawMazeChars::CHAR_WEST;
+        if (sv->getOffsetX() == 0 && sv->getOffsetY() == 1) return drawMazeChars::CHAR_NORTH;
+        if (sv->getOffsetX() == 1 && sv->getOffsetY() == 0) return drawMazeChars::CHAR_EAST;
+        if (sv->getOffsetX() == 0 && sv->getOffsetY() == -1) return drawMazeChars::CHAR_SOUTH;
+        if (sv->getOffsetX() == -1 && sv->getOffsetY() == 0) return drawMazeChars::CHAR_WEST;
 
         
         //printf ("Current (x,y) (%d, %d) delta (x,y) (%d, %d)\n", x,y, sv->getDeltaX(), sv->getDeltaY());
@@ -155,7 +158,8 @@ char getCellSymbol(uint8_t x, uint8_t y, MazeSolver *sv) {
     if (state == 0) return drawMazeChars::CHAR_UNEXPLORED;
     if (state == 1) return drawMazeChars::CHAR_VISITED;
     if (state == 2) return drawMazeChars::CHAR_BLOCKED;
-    return 'X'; // Invalid state
+    if (state == 3) return drawMazeChars::CHAR_UNREACHABLE;
+    return '!'; // Invalid state
 }
 
 void drawMaze(MazeSolver *sv) {
@@ -199,8 +203,8 @@ void test_explore(void)
         //get the next cell to explore
         printf("Current coordinates: (%d, %d)\n", solver->getCurrentX(), solver->getCurrentY());
 
-        uint8_t nextX = solver->getCurrentX() + solver->getDeltaX();
-        uint8_t nextY = solver->getCurrentY() + solver->getDeltaY(); 
+        uint8_t nextX = solver->getCurrentX() + solver->getOffsetX();
+        uint8_t nextY = solver->getCurrentY() + solver->getOffsetY(); 
         printf("Next coordinates: (%d, %d). Go ...\n", nextX, nextY);
                 
         //use mazePic to check if the position is blocked, be sure to transform the coordinates to the mazePic indexes                

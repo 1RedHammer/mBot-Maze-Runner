@@ -176,15 +176,17 @@ void LineFollowingRunner::runMaze()
 
             // Use mazeSolver to update the status of the maze and decide the next move
             MazeSolver::IntersectionResult result = mazeSolver.processIntersection(MazeSolver::State::STATE_VISITED);
+             
 
             if (result.mode == MazeSolver::MODE_RETURNING_HOME)
             {
                 soundPlayer.playMelody(SoundPlayer::EXPLORATION_COMPLETED);
             }
-            else if (result.mode == MazeSolver::MODE_RACING_TO_GOAL)
+            else if (result.mode == MazeSolver::MODE_RACING_TO_TARGET)
             {
                 soundPlayer.playMelody(SoundPlayer::RACE_STARTING);
             }
+            
 
             act(result.action); // Act based on the action returned by the maze solver
             
