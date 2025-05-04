@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <MeMCore.h>
-//#include "..\include\WallDetectingRunner.h"
 #include "..\include\LineFollowingRunner.h"
 
 
@@ -28,12 +27,13 @@ MazeRunner* runner;
 
 void setup() {
     // Start communication with the computer (for debugging)
-    //Serial.begin(9600);
+    Serial.begin(9600);
         
     buzzer.tone(262, 500);
     delay(500);
     
     // Initialize the runner        
+    Serial.println("Initializing runner...");
     runner = new LineFollowingRunner(motorLeft, motorRight, ultrasonicSensor, lineFollower, buzzer, led);
 
 }

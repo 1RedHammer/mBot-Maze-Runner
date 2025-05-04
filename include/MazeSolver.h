@@ -36,8 +36,8 @@ private:
     uint8_t getCurrentRow() const { return currentRow; }
     int8_t getOffsetColumn() const { return directionOffsets[currentDirection][1]; }
     int8_t getOffsetRow() const { return directionOffsets[currentDirection][0]; }
-    int8_t getTargetColumn() const { return targetColumn; }
-    int8_t getTargetRow() const { return targetRow; }
+    uint8_t getTargetColumn() const { return targetColumn; }
+    uint8_t getTargetRow() const { return targetRow; }
 
 public:
 
@@ -46,7 +46,7 @@ public:
         EAST = 1,
         SOUTH = 2,
         WEST = 3,
-        NONE = -1    
+        NONE = -100    
     };
    
     Direction currentDirection = NONE; // Initialize current direction to NONE
@@ -81,7 +81,7 @@ public:
         TURN_LEFT = 2,
         TURN_RIGHT = 3,
         U_TURN = 4,
-        MOVE_BACKWARD = 5 
+        MOVE_BACKWARD = 5
     };
 
     enum Mode {
@@ -90,7 +90,7 @@ public:
         MODE_RETURNING_HOME = 2,  // Returning to the starting point
         MODE_RACING_TO_TARGET = 3,   // Racing to the target
         MODE_RACE_COMPLETED = 4,
-        MODE_TARGET_UNREACHABLE = 5        
+        MODE_TARGET_UNREACHABLE = 5                
     };
 
     Mode mode = MODE_EXPLORING; // Default mode
@@ -101,6 +101,11 @@ public:
         Direction direction;                
         uint8_t currentX;
         uint8_t currentY;
+    };
+
+    struct ModeAndDirection {
+        Mode mode;
+        Direction direction;
     };
 
     IntersectionResult processIntersection(State state) {
@@ -121,8 +126,13 @@ public:
 
     
         // otherwise, we need to decide the next direction to go
-        currentDirection = decideNextDirection();
-        Action action = determineActionBasedOnDirection(currentDirection); // Determine action based on direction, mode may change too.
+
+        ModeAndDirection next = decideNext();
+
+        Action action = determineActionBasedOnDirection(next.direction); // Determine action based on direction, mode may change too.
+
+        currentDirection = next.direction; // Update current direction
+        mode = next.mode; // Update mode
 
         return {mode, action, currentDirection, getCurrentX(), getCurrentY()}; // Return the action and mode
 
@@ -200,11 +210,13 @@ public:
         return NONE; // No path found
     };
 
-    Direction decideNextDirection() {       
+    ModeAndDirection decideNext() {       
+
+        Mode nextMode = mode;
 
         if (mode == MODE_EXPLORING || mode == MODE_EXPLORING_WITH_PATHFINDING) {
          
-            mode = MODE_EXPLORING; // Default exploring mode
+            nextMode = MODE_EXPLORING; // Default exploring mode
 
             bool directionRuledOut[4] = {false, false, false, false}; // N, E, S, W 
       
@@ -242,7 +254,7 @@ public:
             //find the direction that is not ruled out in this order: right, forward, left
             for (int i = 1 ; i >= -1; i--) {
                 if ( directionRuledOut[(currentDirection + i) % 4] == false) { //found a direction to go
-                    return (Direction)((currentDirection + i) % 4); // Set the direction to go                    
+                    return {nextMode, (Direction)((currentDirection + i+4) % 4)}; // Set the direction to go                    
                 }
             }
 
@@ -251,11 +263,11 @@ public:
                 for (int column = 0; column < GlobalConstants::MAZE_WIDTH; column++) {
                     if (mazeState[row][column] == STATE_UNEXPLORED) {
 
-                        mode = MODE_EXPLORING_WITH_PATHFINDING; // Set the mode to exploring with pathfinding
-                        Direction directionToGo = findPathTo(row, column);
+                        nextMode = MODE_EXPLORING_WITH_PATHFINDING; // Set the mode to exploring with pathfinding
+                        Direction nextDirection = findPathTo(row, column);
         
-                        if (directionToGo != NONE) {
-                            return directionToGo;
+                        if (nextDirection != NONE) {
+                            return {nextMode, nextDirection}; // Move towards the unexplored cell
                         }
                         else {
                             mazeState[row][column] = STATE_UNREACHABLE; // Mark as unreachable if no path found
@@ -264,63 +276,62 @@ public:
                 }
             }
                         
-            mode = MODE_RETURNING_HOME; // No unexplored cells found, set mode to returning home
+            nextMode = MODE_RETURNING_HOME; // No unexplored cells found, set mode to returning home
 
             
         } // End of exploring mode
         
-        if (mode == MODE_RETURNING_HOME) 
+        if (nextMode == MODE_RETURNING_HOME) 
         {
-            Direction directionToGo = findPathTo(startRow, startColumn); // Find path to the starting point
-            if (directionToGo != NONE) {
-                return directionToGo; // Move towards the starting point
+            Direction nextDirection = findPathTo(startRow, startColumn); // Find path to the starting point
+            if (nextDirection != NONE) {
+                return {nextMode, nextDirection}; // Move towards the starting point
             } else { // we are already at the starting point
 
                 if (mazeState[targetRow][targetColumn] == STATE_UNREACHABLE) {
-                    mode = MODE_TARGET_UNREACHABLE; // Set mode to target unreachable
+                    nextMode = MODE_TARGET_UNREACHABLE; // Set mode to target unreachable
                 } else {
-                    mode = MODE_RACING_TO_TARGET;
+                    nextMode = MODE_RACING_TO_TARGET;
                 }
             }
         }      
 
-        if (mode == MODE_RACING_TO_TARGET) {
-            Direction directionToGo = findPathTo(targetRow, targetColumn); // Find path to the target
-            if (directionToGo != NONE) {
-                return directionToGo; // Move towards the target
+        if (nextMode == MODE_RACING_TO_TARGET) {
+            Direction nextDirection = findPathTo(targetRow, targetColumn); // Find path to the target
+            if (nextDirection != NONE) {
+                return {nextMode, nextDirection}; // Move towards the target
             }
             else { // we are already at the target
                 if (targetRow == startRow && targetColumn == startColumn) {
-                    mode = MODE_RACE_COMPLETED;                    
+                    nextMode = MODE_RACE_COMPLETED;
+                    return {nextMode, NONE}; // Stop the robot
                 }
             }
         }
 
         // No unexplored cells found, stop the robot, for now
-        return NONE; // No valid direction found
+        return {MODE_TARGET_UNREACHABLE, NONE} ; // No valid direction found
 
     }
 
-    
-
-    Action determineActionBasedOnDirection(Direction directionToGo) {
+    Action determineActionBasedOnDirection(Direction nextDirection) {
         
-        if (directionToGo == NONE) {
-            return STOP; // No valid direction found
+        if (nextDirection == NONE) {
+            return STOP;
         }
 
-        switch ((directionToGo - currentDirection) % 4)
+        // Calculate the difference in direction, add 4 to handle negative values
+        switch ((nextDirection - currentDirection + 4) % 4) 
         {
             case 0: // Forward
                 return MOVE_FORWARD;
             case 1: // Right
                 return TURN_RIGHT;
             case 2: // Backward
-                return U_TURN;
+                return MOVE_BACKWARD;
             case 3: // Left
                 return TURN_LEFT;         
-        }
-
+        }        
         return STOP; // Default action if no valid direction is found
     }
 

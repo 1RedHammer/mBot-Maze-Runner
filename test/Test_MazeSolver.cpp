@@ -21,11 +21,12 @@ MazeSolver *solver;
 // a maze picture to be used for testing
 const std::string 
 
+
 mazePic[4] = {
-    ".?.$",
-    ".???",
+    "...$",
+    "....",
     "....",    
-    "A?.."
+    "A..."
 };
 /*
 mazePic[3] = {
@@ -219,7 +220,7 @@ void test_explore(void)
         }
 
 
-        printf("Solver Result = Action: %s, Mode:%d  \n", actionToString(result.action), result.mode); // print result
+        printf("Solver Result = Action: %s, Mode:%d, Direction:%d  \n", actionToString(result.action), result.mode, result.direction); // print result
         drawMaze(solver);
 
 

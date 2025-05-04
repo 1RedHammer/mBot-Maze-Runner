@@ -29,7 +29,7 @@ void LineFollowingRunner::turn(TurnDirection direction, int angle)
     motorRight.run(-TURN_SPEED * direction);
     motorLeft.run(-TURN_SPEED * direction);
 
-    // find the line
+    // find the line 
     while (lineFollower.readSensors() != S1_IN_S2_IN)
     {        
         delay(20);
@@ -176,7 +176,22 @@ void LineFollowingRunner::runMaze()
 
             // Use mazeSolver to update the status of the maze and decide the next move
             MazeSolver::IntersectionResult result = mazeSolver.processIntersection(MazeSolver::State::STATE_VISITED);
-             
+            
+            // Use Serial to print the result for debugging
+            Serial.print("Action: ");
+            Serial.print(result.action);
+            Serial.print(", Mode: ");
+            Serial.print(result.mode);
+            Serial.print(", Direction: ");
+            Serial.print(result.direction);            
+            Serial.print(", Current Position: (");
+            Serial.print(result.currentX);
+            Serial.print(", ");
+            Serial.print(result.currentY);
+            Serial.println(")");
+
+            
+    
 
             if (result.mode == MazeSolver::MODE_RETURNING_HOME)
             {
