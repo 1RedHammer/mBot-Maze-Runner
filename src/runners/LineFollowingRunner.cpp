@@ -1,11 +1,11 @@
 #include "../../include/LineFollowingRunner.h"
 #include "../../include/SoundPlayer.h"
 
-static constexpr float MIN_OBSTACLE_INCHES = 2.5; // Distance in inches to detect an obstacle
+static constexpr float MIN_OBSTACLE_INCHES = 1.8; // Distance in inches to detect an obstacle
 static constexpr int LOW_SPEED = 35;            // Low speed for steering
 static constexpr int HIGH_SPEED = 70;           // High speed for moving forward
-static constexpr int TURN_SPEED = 80;           // Speed for turning in place
-static constexpr int MIN_TIME_BETWEEN_INTERSECTIONS = 2500;
+static constexpr int TURN_SPEED = 75;           // Speed for turning in place
+static constexpr int MIN_TIME_BETWEEN_INTERSECTIONS = 2700;
 static constexpr int TIME_TO_CENTER_INTERSECTION = 840; // Time to center the robot in the intersection
 static constexpr float TURN_ANGLE_TO_TIME_FACTOR = 3.9; // Factor to convert turn angle to time in milliseconds
 static constexpr int TIME_TO_ALIGN = 10; // Time to align the robot after a turn
@@ -65,26 +65,26 @@ void LineFollowingRunner::uTurn()
     turn(LEFT, 180);
 }
 
-void LineFollowingRunner::act(MazeSolver::Action action)
+void LineFollowingRunner::act(Global::RobotMovement action)
 {
     switch (action)
     {
-    case MazeSolver::MOVE_FORWARD:
+    case Global::MOVE_FORWARD:
         moveForward();
         break;
-    case MazeSolver::TURN_LEFT:
+    case Global::TURN_LEFT:
         turnLeft();
         break;
-    case MazeSolver::TURN_RIGHT:
+    case Global::TURN_RIGHT:
         turnRight();
         break;
-    case MazeSolver::U_TURN:
+    case Global::U_TURN:
         uTurn();
         break;
-    case MazeSolver::MOVE_BACKWARD:
+    case Global::MOVE_BACKWARD:
         moveBackward();
         break;
-    case MazeSolver::STOP:
+    case Global::STOP:
         motorRight.stop();
         motorLeft.stop();
         
@@ -119,7 +119,7 @@ void LineFollowingRunner::runMaze()
             
             soundPlayer.playMelody(SoundPlayer::OBSTACLE_ENCOUNTERED);            
 
-            MazeSolver::IntersectionResult result = mazeSolver.processIntersection(MazeSolver::State::STATE_BLOCKED);  
+            MazeSolver::IntersectionResult result = mazeSolver.processIntersection(Global::STATE_BLOCKED);  
             
             // the only actions that make sense here are U_TURN and MOVE_BACKWARD
             act(result.action); // Act based on the action returned by the maze solver
@@ -175,7 +175,7 @@ void LineFollowingRunner::runMaze()
             delay(50);
 
             // Use mazeSolver to update the status of the maze and decide the next move
-            MazeSolver::IntersectionResult result = mazeSolver.processIntersection(MazeSolver::State::STATE_VISITED);
+            MazeSolver::IntersectionResult result = mazeSolver.processIntersection(Global::STATE_VISITED);
             
             // Use Serial to print the result for debugging
             Serial.print("Action: ");
@@ -190,18 +190,17 @@ void LineFollowingRunner::runMaze()
             Serial.print(result.currentY);
             Serial.println(")");
 
-            
-    
-
-            if (result.mode == MazeSolver::MODE_RETURNING_HOME)
+            if (result.modeChanged)
             {
-                soundPlayer.playMelody(SoundPlayer::EXPLORATION_COMPLETED);
-            }
-            else if (result.mode == MazeSolver::MODE_RACING_TO_TARGET)
-            {
-                soundPlayer.playMelody(SoundPlayer::RACE_STARTING);
-            }
-            
+                if (result.mode == Global::MODE_RETURNING_HOME)
+                {
+                    soundPlayer.playMelody(SoundPlayer::EXPLORATION_COMPLETED);
+                }
+                else if (result.mode == Global::MODE_RACING_TO_TARGET)
+                {
+                    soundPlayer.playMelody(SoundPlayer::RACE_STARTING);
+                }                
+            }    
 
             act(result.action); // Act based on the action returned by the maze solver
             

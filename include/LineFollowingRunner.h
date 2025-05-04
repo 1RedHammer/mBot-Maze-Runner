@@ -13,7 +13,7 @@ public:
         : 
         MazeRunner(left, right, sensor, lineFollower, buz, rgbled),
         // Initialize the maze solver with start and target positions and direction
-        mazeSolver(0, 0, GlobalConstants::MAZE_WIDTH - 1, GlobalConstants::MAZE_HEIGHT - 1, MazeSolver::Direction::NORTH),
+        mazeSolver(0, 0, Global::MAZE_WIDTH - 1, Global::MAZE_HEIGHT - 1, Global::NORTH),
         soundPlayer(buzzer) 
         {
 
@@ -37,7 +37,7 @@ private:
     void moveForward();
     void moveBackward();
     void uTurn();
-    void act(MazeSolver::Action action);
+    void act(Global::RobotMovement action);
 };
 
 #endif

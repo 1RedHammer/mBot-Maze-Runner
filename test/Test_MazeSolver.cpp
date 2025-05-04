@@ -24,8 +24,8 @@ const std::string
 
 mazePic[4] = {
     "...$",
-    "....",
-    "....",    
+    "...?",
+    ".?..",    
     "A..."
 };
 /*
@@ -39,7 +39,6 @@ mazePic[3] = {
 struct drawMazeChars
 {
     // note - better stick with common characters otherwise printf will work weirdly
-
     static const char CHAR_BLOCKED = 'X';    // Blocked cell known to the solver
     static const char CHAR_BLOCKED_Unkown = '?';  // Blocked cell unknown to the solver
     static const char CHAR_VISITED = 'o';    // Visited cell
@@ -51,23 +50,22 @@ struct drawMazeChars
     static const char CHAR_SOUTH = 'V';      // South
     static const char CHAR_WEST = '<';       // West
     static const char CHAR_Target = '$';     // Target
-
 };
 
 uint8_t toRowIndex(uint8_t y) {
-    return GlobalConstants::MAZE_HEIGHT - 1 - y; // Reverse y-axis
+    return Global::MAZE_HEIGHT - 1 - y; // Reverse y-axis
 }
 
 uint8_t toMazeCoordinatesY(uint8_t indexY) {
-    return GlobalConstants::MAZE_HEIGHT - 1 - indexY; // Reverse y-axis
+    return Global::MAZE_HEIGHT - 1 - indexY; // Reverse y-axis
 }
 
 void initMaze(MazeSolver *sv)
 {
     //iterate through the mazePic and set the maze state
-    for (uint8_t y = 0; y < GlobalConstants::MAZE_HEIGHT; ++y)
+    for (uint8_t y = 0; y < Global::MAZE_HEIGHT; ++y)
     {
-        for (uint8_t x = 0; x < GlobalConstants::MAZE_WIDTH; ++x)
+        for (uint8_t x = 0; x < Global::MAZE_WIDTH; ++x)
         {                        
             uint8_t picCell = mazePic[y][x]; // Get the cell character
             uint8_t indexY = toRowIndex(y); // Reverse the y-axis for intuitive display            
@@ -75,15 +73,15 @@ void initMaze(MazeSolver *sv)
             // Set the maze state based on the character
             if (picCell == drawMazeChars::CHAR_BLOCKED)
             {
-                sv->setStateAtCoordinates(x, indexY, MazeSolver::State::STATE_BLOCKED); // Blocked cell
+                sv->setStateAtCoordinates(x, indexY, Global::STATE_BLOCKED); // Blocked cell
             }
             else if (picCell == drawMazeChars::CHAR_VISITED)
             {
-                sv->setStateAtCoordinates(x, indexY, MazeSolver::State::STATE_VISITED); // Visited cell
+                sv->setStateAtCoordinates(x, indexY, Global::STATE_VISITED); // Visited cell
             }
             else if (picCell == drawMazeChars::CHAR_UNEXPLORED)
             {
-                sv->setStateAtCoordinates(x, indexY, MazeSolver::State::STATE_UNEXPLORED); // Unexplored cell
+                sv->setStateAtCoordinates(x, indexY, Global::STATE_UNEXPLORED); // Unexplored cell
             }
             else if (picCell == drawMazeChars::CHAR_Target)
             {
@@ -91,33 +89,33 @@ void initMaze(MazeSolver *sv)
             }
             else if (picCell == drawMazeChars::CHAR_RUNNER)
             {
-                sv->setStateAtCoordinates(x, indexY, MazeSolver::State::STATE_VISITED);
+                sv->setStateAtCoordinates(x, indexY, Global::STATE_VISITED);
                 sv->setCurrent(x, indexY); // Set current position
             }
             else if (picCell == drawMazeChars::CHAR_NORTH)
             {
-                sv->setStateAtCoordinates(x, indexY, MazeSolver::State::STATE_VISITED);
-                sv->setDirection(MazeSolver::Direction::NORTH); // Set direction to north
+                sv->setStateAtCoordinates(x, indexY, Global::STATE_VISITED);
+                sv->setDirection(Global::NORTH); // Set direction to north
             }
             else if (picCell == drawMazeChars::CHAR_EAST)
             {
-                sv->setStateAtCoordinates(x, indexY, MazeSolver::State::STATE_VISITED);
-                sv->setDirection(MazeSolver::Direction::EAST); // Set direction to east
+                sv->setStateAtCoordinates(x, indexY, Global::STATE_VISITED);
+                sv->setDirection(Global::EAST); // Set direction to east
              
             }
             else if (picCell == drawMazeChars::CHAR_SOUTH)
             {
-                sv->setStateAtCoordinates(x, indexY, MazeSolver::State::STATE_VISITED);
-                sv->setDirection(MazeSolver::Direction::SOUTH); // Set direction to south
+                sv->setStateAtCoordinates(x, indexY, Global::STATE_VISITED);
+                sv->setDirection(Global::SOUTH); // Set direction to south
             }
             else if (picCell == drawMazeChars::CHAR_WEST)
             {
-                sv->setStateAtCoordinates(x, indexY, MazeSolver::State::STATE_VISITED);
-                sv->setDirection(MazeSolver::Direction::WEST); // Set direction to west
+                sv->setStateAtCoordinates(x, indexY, Global::STATE_VISITED);
+                sv->setDirection(Global::WEST); // Set direction to west
             }
             else {
                 // Default case for unexplored cells (this include the '?')
-                sv->setStateAtCoordinates(x, indexY, MazeSolver::State::STATE_UNEXPLORED);
+                sv->setStateAtCoordinates(x, indexY, Global::STATE_UNEXPLORED);
             }
         }
     }
@@ -127,7 +125,7 @@ void initMaze(MazeSolver *sv)
 void setUp(void)
 {
     // Initialize the maze
-    solver = new MazeSolver(0, 0, GlobalConstants::MAZE_WIDTH - 1, GlobalConstants::MAZE_HEIGHT - 1, MazeSolver::Direction::NORTH);
+    solver = new MazeSolver(0, 0, Global::MAZE_WIDTH - 1, Global::MAZE_HEIGHT - 1, Global::NORTH);
 
     //initMaze(solver); // Set the maze state
 }
@@ -165,9 +163,9 @@ char getCellSymbol(uint8_t x, uint8_t y, MazeSolver *sv) {
 
 void drawMaze(MazeSolver *sv) {
     printf("\n");
-    for (int8_t y = GlobalConstants::MAZE_HEIGHT - 1; y >= 0; --y) {
+    for (int8_t y = Global::MAZE_HEIGHT - 1; y >= 0; --y) {
         printf("  ");
-        for (uint8_t x = 0; x < GlobalConstants::MAZE_WIDTH; ++x) {
+        for (uint8_t x = 0; x < Global::MAZE_WIDTH; ++x) {
             printf("%c ", getCellSymbol(x, y, sv));
         }
         printf("\n");
@@ -176,15 +174,38 @@ void drawMaze(MazeSolver *sv) {
     fflush(stdout);
 }
 
-const char* actionToString(MazeSolver::Action action) {
+const char* actionToString(Global::RobotMovement action) {
     switch (action) {
-        case MazeSolver::Action::STOP: return "STOP";
-        case MazeSolver::Action::MOVE_FORWARD: return "MOVE_FORWARD";
-        case MazeSolver::Action::TURN_LEFT: return "TURN_LEFT";
-        case MazeSolver::Action::TURN_RIGHT: return "TURN_RIGHT";
-        case MazeSolver::Action::U_TURN: return "U_TURN";
-        case MazeSolver::Action::MOVE_BACKWARD: return "MOVE_BACKWARD";
-        default: return "UNKNOWN_ACTION";
+        case Global::RobotMovement::STOP: return "STOP";
+        case Global::RobotMovement::MOVE_FORWARD: return "MOVE_FORWARD";
+        case Global::RobotMovement::TURN_LEFT: return "TURN_LEFT";
+        case Global::RobotMovement::TURN_RIGHT: return "TURN_RIGHT";
+        case Global::RobotMovement::U_TURN: return "U_TURN";
+        case Global::RobotMovement::MOVE_BACKWARD: return "MOVE_BACKWARD";
+        default: return "UNKNOWN";
+    }
+}
+
+const char* modeToString(Global::Mode mode) {
+    switch (mode) {
+        case Global::MODE_EXPLORING: return "EXPLORING";
+        case Global::MODE_EXPLORING_WITH_PATHFINDING: return "EXPLORING_WITH_PATHFINDING";
+        case Global::MODE_RETURNING_HOME: return "RETURNING_HOME";
+        case Global::MODE_RACING_TO_TARGET: return "RACING_TO_TARGET";
+        case Global::MODE_RACE_COMPLETED: return "RACE_COMPLETED";
+        case Global::MODE_TARGET_UNREACHABLE: return "TARGET_UNREACHABLE";
+        default: return "UNKNOWN";   
+    }
+}
+
+const char* directionToString(Global::Direction direction) {
+    switch (direction) {
+        case Global::NORTH: return "NORTH";
+        case Global::EAST: return "EAST";
+        case Global::SOUTH: return "SOUTH";
+        case Global::WEST: return "WEST";
+        case Global::NO_DIRECTION: return "NO_DIRECTION";
+        default: return "UNKNOWN";
     }
 }
 
@@ -197,8 +218,7 @@ void test_explore(void)
     int maxSteps = 40; // Maximum steps to explore the maze
     MazeSolver::IntersectionResult result ;
 
-    do{
-        
+    do{        
         printf("STEP %d\n", ++limiter);
 
         //get the next cell to explore
@@ -212,20 +232,17 @@ void test_explore(void)
         if (mazePic[toRowIndex(nextY)][nextX] == drawMazeChars::CHAR_BLOCKED_Unkown
         || mazePic[toRowIndex(nextY)][nextX] == drawMazeChars::CHAR_BLOCKED) {        
             printf("Next is found to be blocked\n");
-            result = solver->processIntersection(MazeSolver::State::STATE_BLOCKED); // Blocked cell
+            result = solver->processIntersection(Global::STATE_BLOCKED); // Blocked cell
         }
         else {
             printf("Next is reached\n");
-            result = solver->processIntersection(MazeSolver::State::STATE_VISITED); // Process the intersection            
+            result = solver->processIntersection(Global::STATE_VISITED); // Process the intersection            
         }
 
-
-        printf("Solver Result = Action: %s, Mode:%d, Direction:%d  \n", actionToString(result.action), result.mode, result.direction); // print result
+        printf("Solver Result = Action: %s, Mode: %s, Direction: %s  \n", actionToString(result.action), modeToString(result.mode), directionToString(result.direction)); // print result
         drawMaze(solver);
-
-
-    }
-    while (result.action != MazeSolver::Action::STOP && limiter < maxSteps); // Stop if the target is reached or if the loop limit is reached
+    }    
+    while (result.action != Global::RobotMovement::STOP && limiter < maxSteps); // Stop if the target is reached or if the loop limit is reached
     
 }
 
